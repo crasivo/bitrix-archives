@@ -1,0 +1,64 @@
+name: Ручная публикация репозитория
+
+on:
+  workflow_dispatch:
+    inputs:
+      distro_code:
+        description: 'Кодовое обозначение'
+        required: true
+        default: 'business'
+        type: choice
+        options: [business, small_business, standard, start, portal, bitrix24]
+      distro_type:
+        description: 'Тип дистрибутива'
+        required: true
+        default: 'web'
+        type: choice
+        options: [web, portal]
+
+jobs:
+  analyze-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run
+        id: analysis
+        run: |
+          ./scripts/fetch_bitrix.sh ${{ github.event.inputs.distro_code }} --type=${{ github.event.inputs.distro_type }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: env.BITRIX_MAIN_VERSION != 'null'
+        with:
+          tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
+          name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"
+          body: |
+            ### Автоматический импорт дистрибутива 1С-Битрикс
+
+            **General info:**
+            - Distro code: ${{ github.event.inputs.distro_code }}
+            - Distro type: ${{ github.event.inputs.distro_type }}
+            - Main version: `${{ env.BITRIX_MAIN_VERSION }}`
+            - Main version date: `${{ env.BITRIX_MAIN_VERSION_DATE }}`
+
+            **Meta info:**
+            - Tar size: `${{ env.BITRIX_META_TAR_SIZE_MB }} MB`
+            - Tar md5: `${{ env.BITRIX_META_TAR_MD5 }}`
+            - Tar sha1: `${{ env.BITRIX_META_TAR_SHA1 }}`
+            - Zip size: `${{ env.BITRIX_META_ZIP_SIZE_MB }} MB`
+            - Zip md5: `${{ env.BITRIX_META_ZIP_MD5 }}`
+            - Zip sha1: `${{ env.BITRIX_META_ZIP_SHA1 }}`
+
+            Все файлы загружены с официального сайта 1С-Битрикс.
+          files: |
+            tmp/${{ github.event.inputs.distro_type }}/manifest.json
+            ${{ env.BITRIX_META_ZIP_FILEPATH }}
+            ${{ env.BITRIX_META_ZIP_FILEPATH }}.md5
+            ${{ env.BITRIX_META_ZIP_FILEPATH }}.sha1
+            ${{ env.BITRIX_META_TAR_FILEPATH }}
+            ${{ env.BITRIX_META_TAR_FILEPATH }}.md5
+            ${{ env.BITRIX_META_TAR_FILEPATH }}.sha1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
