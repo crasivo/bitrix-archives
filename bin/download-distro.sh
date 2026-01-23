@@ -16,6 +16,10 @@ S_CONTEXT_DIR=$(dirname "$S_FILEPATH")
 S_ROOT_DIR=$(realpath "$S_CONTEXT_DIR/../")
 S_TMP_DIR="$S_ROOT_DIR/tmp"
 
+# GitHub
+GITHUB_ENV=${GITHUB_ENV:-}
+GITHUB_TOKEN=${GITHUB_TOKEN:-}
+
 # Bitrix: Main
 BITRIX_DISTRO_CODE=${BITRIX_DISTRO_CODE:-}
 BITRIX_DISTRO_TYPE=${BITRIX_DISTRO_TYPE:-}
@@ -26,10 +30,12 @@ BITRIX_MAIN_VERSION_DATE=${BITRIX_MAIN_VERSION_DATE:-null}
 BITRIX_META_TAR_FILEPATH=${BITRIX_META_TAR_FILEPATH:-null}
 BITRIX_META_TAR_MD5=${BITRIX_META_TAR_MD5:-null}
 BITRIX_META_TAR_SHA1=${BITRIX_META_TAR_SHA1:-null}
+BITRIX_META_TAR_SHA256=${BITRIX_META_TAR_SHA256:-null}
 BITRIX_META_TAR_SIZE=${BITRIX_META_TAR_SIZE:-null}
 BITRIX_META_ZIP_FILEPATH=${BITRIX_META_ZIP_FILEPATH:-null}
 BITRIX_META_ZIP_MD5=${BITRIX_META_ZIP_MD5:-null}
 BITRIX_META_ZIP_SHA1=${BITRIX_META_ZIP_SHA1:-null}
+BITRIX_META_ZIP_SHA256=${BITRIX_META_ZIP_SHA256:-null}
 BITRIX_META_ZIP_SIZE=${BITRIX_META_ZIP_SIZE:-null}
 
 # Bitrix: Manifest
@@ -49,10 +55,12 @@ function _bx_create_final_manifest() {
     --arg zip_filepath  "$BITRIX_META_ZIP_FILEPATH" \
     --arg zip_md5  "$BITRIX_META_ZIP_MD5" \
     --arg zip_sha1 "$BITRIX_META_ZIP_SHA1" \
+    --arg zip_sha256 "$BITRIX_META_ZIP_SHA256" \
     --arg zip_size "$BITRIX_META_ZIP_SIZE" \
     --arg tar_filepath  "$BITRIX_META_TAR_FILEPATH" \
     --arg tar_md5  "$BITRIX_META_TAR_MD5" \
     --arg tar_sha1 "$BITRIX_META_TAR_SHA1" \
+    --arg tar_sha256 "$BITRIX_META_TAR_SHA256" \
     --arg tar_size "$BITRIX_META_TAR_SIZE" \
     '{
       bitrix: {
@@ -61,20 +69,22 @@ function _bx_create_final_manifest() {
         main_version: (if $main_version == "null" or $main_version == "" then null else $main_version end),
         main_version_date: (if $main_version_date == "null" or $main_version_date == "" then null else $main_version_date end)
       },
-      artifacts: {
-        zip: {
-          filename: ($zip_filepath | split("/") | last),
-          md5: $zip_md5,
-          sha1: $zip_sha1,
-          size: ($zip_size | tonumber)
-        },
-        tar: {
+      artifacts: [
+        {
           filename: ($tar_filepath | split("/") | last),
           md5: $tar_md5,
           sha1: $tar_sha1,
+          sha256: $tar_sha256,
           size: ($tar_size | tonumber)
+        },
+        {
+          filename: ($zip_filepath | split("/") | last),
+          md5: $zip_md5,
+          sha1: $zip_sha1,
+          sha256: $zip_sha256,
+          size: ($zip_size | tonumber)
         }
-      },
+      ],
       metadata: {
         source: "https://www.1c-bitrix.ru/download/cms.php",
         repository: "https://github.com/crasivo/bitrix-archives"
@@ -146,10 +156,12 @@ function _bx_dump_tar_meta() {
     BITRIX_META_TAR_SIZE_MB=$(echo "scale=2; $BITRIX_META_TAR_SIZE / 1048576" | bc)
     BITRIX_META_TAR_MD5=$(md5sum "$1" | awk '{ print $1 }')
     BITRIX_META_TAR_SHA1=$(sha1sum "$1" | awk '{ print $1 }')
+    BITRIX_META_TAR_SHA256=$(sha256sum "$1" | awk '{ print $1 }')
     # Dump
     echo "$BITRIX_META_TAR_SIZE" > "$1.size"
     echo "$BITRIX_META_TAR_MD5" > "$1.md5"
     echo "$BITRIX_META_TAR_SHA1" > "$1.sha1"
+    echo "$BITRIX_META_TAR_SHA256" > "$1.sha256"
 }
 
 function _bx_dump_zip_meta() {
@@ -158,21 +170,22 @@ function _bx_dump_zip_meta() {
     BITRIX_META_ZIP_SIZE_MB=$(echo "scale=2; $BITRIX_META_ZIP_SIZE / 1048576" | bc)
     BITRIX_META_ZIP_MD5=$(md5sum "$1" | awk '{ print $1 }')
     BITRIX_META_ZIP_SHA1=$(sha1sum "$1" | awk '{ print $1 }')
+    BITRIX_META_ZIP_SHA256=$(sha256sum "$1" | awk '{ print $1 }')
     # Dump
     echo "$BITRIX_META_ZIP_SIZE" > "$1.size"
     echo "$BITRIX_META_ZIP_MD5" > "$1.md5"
     echo "$BITRIX_META_ZIP_SHA1" > "$1.sha1"
+    echo "$BITRIX_META_ZIP_SHA256" > "$1.sha256"
 }
 
 # @description Экспорт всех переменных для GitHub Action
 function _bx_export_github_variables() {
-    if [[ -z "${GITHUB_ENV:-}" ]]; then
+    if [[ -z "$GITHUB_ENV" ]]; then
         echo "[DEBUG] Skip export GitHub variables"
         return
     fi
     for var in $(compgen -v | grep '^BITRIX_'); do
-        # shellcheck disable=SC2086
-        echo "$var=${!var}" >> "${GITHUB_ENV:-}"
+        echo "$var=${!var}" >> "$GITHUB_ENV"
     done
 }
 

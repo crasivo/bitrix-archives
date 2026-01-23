@@ -1,4 +1,4 @@
-name: Ручная публикация репозитория
+name: Manual publish
 
 on:
   workflow_dispatch:
@@ -6,15 +6,9 @@ on:
       distro_code:
         description: 'Кодовое обозначение'
         required: true
-        default: 'business'
+        default: 'start'
         type: choice
-        options: [business, small_business, standard, start, portal, bitrix24]
-      distro_type:
-        description: 'Тип дистрибутива'
-        required: true
-        default: 'web'
-        type: choice
-        options: [web, portal]
+        options: [start,standard,business,small_business,business_cluster,business_cluster_postgresql,bitrix24,bitrix24_shop,bitrix24_enterprise]
 
 jobs:
   publish_distro:
@@ -27,7 +21,7 @@ jobs:
       - name: Run
         id: analysis
         run: |
-          ./bin/download-distro.sh ${{ github.event.inputs.distro_code }} --type=${{ github.event.inputs.distro_type }}
+          ./bin/download-distro.sh ${{ github.event.inputs.distro_code }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: env.BITRIX_MAIN_VERSION != 'null'
@@ -35,21 +29,13 @@ jobs:
           tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
           name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"
           body: |
-            ### Automatic import of the 1C-Bitrix distribution
+            ### Manual publish
 
             **General info:**
-            - Distro code: ${{ github.event.inputs.distro_code }}
-            - Distro type: ${{ github.event.inputs.distro_type }}
+            - Distro code: `${{ github.event.inputs.distro_code }}`
+            - Distro type: `${{ github.event.inputs.distro_type }}`
             - Main version: `${{ env.BITRIX_MAIN_VERSION }}`
             - Main version date: `${{ env.BITRIX_MAIN_VERSION_DATE }}`
-
-            **Meta info:**
-            - Tar size: `${{ env.BITRIX_META_TAR_SIZE_MB }} MB`
-            - Tar md5: `${{ env.BITRIX_META_TAR_MD5 }}`
-            - Tar sha1: `${{ env.BITRIX_META_TAR_SHA1 }}`
-            - Zip size: `${{ env.BITRIX_META_ZIP_SIZE_MB }} MB`
-            - Zip md5: `${{ env.BITRIX_META_ZIP_MD5 }}`
-            - Zip sha1: `${{ env.BITRIX_META_ZIP_SHA1 }}`
 
             All files are downloaded from the official 1C-Bitrix website.
           files: |
@@ -57,8 +43,10 @@ jobs:
             ${{ env.BITRIX_META_ZIP_FILEPATH }}
             ${{ env.BITRIX_META_ZIP_FILEPATH }}.md5
             ${{ env.BITRIX_META_ZIP_FILEPATH }}.sha1
+            ${{ env.BITRIX_META_ZIP_FILEPATH }}.sha256
             ${{ env.BITRIX_META_TAR_FILEPATH }}
             ${{ env.BITRIX_META_TAR_FILEPATH }}.md5
             ${{ env.BITRIX_META_TAR_FILEPATH }}.sha1
+            ${{ env.BITRIX_META_TAR_FILEPATH }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
