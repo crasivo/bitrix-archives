@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       distro_code:
-        description: 'Кодовое обозначение'
+        description: 'Distribution'
         required: true
         default: 'start'
         type: choice
