@@ -17,7 +17,7 @@ on:
         options: [web, portal]
 
 jobs:
-  analyze-and-release:
+  publish_distro:
     runs-on: ubuntu-latest
     permissions:
       contents: write
