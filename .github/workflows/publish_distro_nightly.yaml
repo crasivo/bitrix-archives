@@ -1,20 +1,28 @@
-name: Manual publish any distro
+name: Scheduled publish all distros
 
 on:
-  workflow_dispatch:
-    inputs:
-      distro_code:
-        description: 'Distribution'
-        required: true
-        default: 'start'
-        type: choice
-        options: [start,standard,business,small_business,business_cluster,business_cluster_postgresql,bitrix24,bitrix24_shop,bitrix24_enterprise]
+  schedule:
+    - cron: '0 0 * * *'
 
 jobs:
   publish_distro:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [
+          start,
+          standard,
+          business,
+          small_business,
+          business_cluster,
+          business_cluster_postgresql,
+          bitrix24,
+          bitrix24_shop,
+          bitrix24_enterprise
+        ]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,13 +30,13 @@ jobs:
         id: analysis
         run: |
           chmod +x ./bin/download-distro.sh
-          ./bin/download-distro.sh ${{ github.event.inputs.distro_code }}
+          ./bin/download-distro.sh ${{ matrix.distro }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != ''
         with:
-          tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
-          name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"
+          tag_name: ${{ matrix.distro }}-${{ env.BITRIX_MAIN_VERSION }}
+          name: "${{ matrix.distro }} v${{ env.BITRIX_MAIN_VERSION }}"
           body: |
             ## 📦 Distribution Information
 
@@ -37,7 +45,7 @@ jobs:
             ### 📝 General Metadata
             | Property | Value |
             | :--- | :--- |
-            | **Distribution Code** | `${{ github.event.inputs.distro_code }}` |
+            | **Distribution Code** | `${{ matrix.distro }}` |
             | **Kernel Version** | `${{ env.BITRIX_MAIN_VERSION }}` |
             | **Release Date** | `${{ env.BITRIX_MAIN_VERSION_DATE }}` |
 
@@ -46,7 +54,7 @@ jobs:
 
             ```bash
             # Example: Verify SHA256
-            sha256sum -c ${{ github.event.inputs.distro_code }}_encode.zip.sha256
+            sha256sum -c ${{ matrix.distro }}_encode.zip.sha256
             ```
 
             ### 🚀 Automation & Integration
