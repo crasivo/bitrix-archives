@@ -27,7 +27,7 @@ jobs:
       - name: Run
         id: analysis
         run: |
-          ./scripts/fetch_bitrix.sh ${{ github.event.inputs.distro_code }} --type=${{ github.event.inputs.distro_type }}
+          ./bin/download-distro.sh ${{ github.event.inputs.distro_code }} --type=${{ github.event.inputs.distro_type }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         if: env.BITRIX_MAIN_VERSION != 'null'
@@ -35,7 +35,7 @@ jobs:
           tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
           name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"
           body: |
-            ### Автоматический импорт дистрибутива 1С-Битрикс
+            ### Automatic import of the 1C-Bitrix distribution
 
             **General info:**
             - Distro code: ${{ github.event.inputs.distro_code }}
@@ -51,9 +51,9 @@ jobs:
             - Zip md5: `${{ env.BITRIX_META_ZIP_MD5 }}`
             - Zip sha1: `${{ env.BITRIX_META_ZIP_SHA1 }}`
 
-            Все файлы загружены с официального сайта 1С-Битрикс.
+            All files are downloaded from the official 1C-Bitrix website.
           files: |
-            tmp/${{ github.event.inputs.distro_type }}/manifest.json
+            ${{ env.BITRIX_MANIFEST_FILEPATH }}
             ${{ env.BITRIX_META_ZIP_FILEPATH }}
             ${{ env.BITRIX_META_ZIP_FILEPATH }}.md5
             ${{ env.BITRIX_META_ZIP_FILEPATH }}.sha1
