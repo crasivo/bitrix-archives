@@ -18,28 +18,28 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Run
+
+      - name: Run analysis and download
         id: analysis
         run: |
+          chmod +x ./bin/download-distro.sh
           ./bin/download-distro.sh ${{ github.event.inputs.distro_code }}
-        env:
-          GITHUB_RELEASE: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: env.SKIP_PUBLISH != 'true'
+        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != 'null'
         with:
           tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
           name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"
           body: |
-            ### Manual publish
+            ### 📦 Bitrix Distribution Release
 
             **General info:**
-            - Distro code: `${{ github.event.inputs.distro_code }}`
-            - Distro type: `${{ github.event.inputs.distro_type }}`
-            - Main version: `${{ env.BITRIX_MAIN_VERSION }}`
-            - Main version date: `${{ env.BITRIX_MAIN_VERSION_DATE }}`
+            - **Distro code:** `${{ github.event.inputs.distro_code }}`
+            - **Main version:** `${{ env.BITRIX_MAIN_VERSION }}`
+            - **Version date:** `${{ env.BITRIX_MAIN_VERSION_DATE }}`
 
-            All files are downloaded from the official 1C-Bitrix website.
+            *All files are verified and hashed. Manifest included.*
           files: |
             ${{ env.BITRIX_MANIFEST_FILEPATH }}
             ${{ env.BITRIX_META_ZIP_FILEPATH }}
