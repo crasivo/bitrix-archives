@@ -22,9 +22,11 @@ jobs:
         id: analysis
         run: |
           ./bin/download-distro.sh ${{ github.event.inputs.distro_code }}
+        env:
+          GITHUB_RELEASE: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: env.BITRIX_MAIN_VERSION != 'null'
+        if: env.SKIP_PUBLISH != 'true'
         with:
           tag_name: ${{ github.event.inputs.distro_code }}-${{ env.BITRIX_MAIN_VERSION }}
           name: "${{ github.event.inputs.distro_code }} v${{ env.BITRIX_MAIN_VERSION }}"

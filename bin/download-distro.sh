@@ -10,15 +10,16 @@ set -o errexit
 # ----------------------------------------------------------------
 
 # Context (constant)
-S_EXEC_DATE=$(date +%Y%m%d)
 S_FILEPATH=$(realpath "$0")
 S_CONTEXT_DIR=$(dirname "$S_FILEPATH")
 S_ROOT_DIR=$(realpath "$S_CONTEXT_DIR/../")
 S_TMP_DIR="$S_ROOT_DIR/tmp"
 
 # GitHub
+GITHUB_REPO='crasivo/bitrix-archives'
 GITHUB_ENV=${GITHUB_ENV:-}
 GITHUB_TOKEN=${GITHUB_TOKEN:-}
+GITHUB_RELEASE_TAG=${GITHUB_RELEASE_TAG:-}
 
 # Bitrix: Main
 BITRIX_DISTRO_CODE=${BITRIX_DISTRO_CODE:-}
@@ -45,55 +46,75 @@ BITRIX_MANIFEST_FILEPATH=${BITRIX_META_MANIFEST_FILEPATH:-}
 # Functions
 # ----------------------------------------------------------------
 
+# @description Check release exists
+# @param $1 string Tag
+function _bx_check_release() {
+    echo "[INFO] Check release '$1'"
+    local http_status
+    http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$1")
+    if [[ $http_status == 404 ]]; then
+        echo "[INFO] Release '$1' not found. Continue..."
+        return
+    fi
+
+    # Notify Github
+    if [[ -n "$GITHUB_ENV" ]]; then
+        echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
+    fi
+
+    # Stop execute
+    exit 0
+}
+
 # @description Создание финального manifest.json
 function _bx_create_final_manifest() {
   jq -n \
-    --arg distro_code "$BITRIX_DISTRO_CODE" \
-    --arg distro_type "$BITRIX_DISTRO_TYPE" \
-    --arg main_version  "$BITRIX_MAIN_VERSION" \
-    --arg main_version_date "$BITRIX_MAIN_VERSION_DATE" \
-    --arg zip_filepath  "$BITRIX_META_ZIP_FILEPATH" \
-    --arg zip_md5  "$BITRIX_META_ZIP_MD5" \
-    --arg zip_sha1 "$BITRIX_META_ZIP_SHA1" \
-    --arg zip_sha256 "$BITRIX_META_ZIP_SHA256" \
-    --arg zip_size "$BITRIX_META_ZIP_SIZE" \
-    --arg tar_filepath  "$BITRIX_META_TAR_FILEPATH" \
-    --arg tar_md5  "$BITRIX_META_TAR_MD5" \
-    --arg tar_sha1 "$BITRIX_META_TAR_SHA1" \
-    --arg tar_sha256 "$BITRIX_META_TAR_SHA256" \
-    --arg tar_size "$BITRIX_META_TAR_SIZE" \
-    '{
-      bitrix: {
-        distro_code: $distro_code,
-        distro_type: $distro_type,
-        main_version: (if $main_version == "null" or $main_version == "" then null else $main_version end),
-        main_version_date: (if $main_version_date == "null" or $main_version_date == "" then null else $main_version_date end)
-      },
-      artifacts: [
-        {
-          filename: ($tar_filepath | split("/") | last),
-          md5: $tar_md5,
-          sha1: $tar_sha1,
-          sha256: $tar_sha256,
-          size: ($tar_size | tonumber)
+      --arg distro_code "$BITRIX_DISTRO_CODE" \
+      --arg distro_type "$BITRIX_DISTRO_TYPE" \
+      --arg main_version  "$BITRIX_MAIN_VERSION" \
+      --arg main_version_date "$BITRIX_MAIN_VERSION_DATE" \
+      --arg zip_filepath  "$BITRIX_META_ZIP_FILEPATH" \
+      --arg zip_md5  "$BITRIX_META_ZIP_MD5" \
+      --arg zip_sha1 "$BITRIX_META_ZIP_SHA1" \
+      --arg zip_sha256 "$BITRIX_META_ZIP_SHA256" \
+      --arg zip_size "$BITRIX_META_ZIP_SIZE" \
+      --arg tar_filepath  "$BITRIX_META_TAR_FILEPATH" \
+      --arg tar_md5  "$BITRIX_META_TAR_MD5" \
+      --arg tar_sha1 "$BITRIX_META_TAR_SHA1" \
+      --arg tar_sha256 "$BITRIX_META_TAR_SHA256" \
+      --arg tar_size "$BITRIX_META_TAR_SIZE" \
+      '{
+        bitrix: {
+          distro_code: $distro_code,
+          distro_type: $distro_type,
+          main_version: (if $main_version == "null" or $main_version == "" then null else $main_version end),
+          main_version_date: (if $main_version_date == "null" or $main_version_date == "" then null else $main_version_date end)
         },
-        {
-          filename: ($zip_filepath | split("/") | last),
-          md5: $zip_md5,
-          sha1: $zip_sha1,
-          sha256: $zip_sha256,
-          size: ($zip_size | tonumber)
+        artifacts: [
+          {
+            filename: ($tar_filepath | split("/") | last),
+            md5: $tar_md5,
+            sha1: $tar_sha1,
+            sha256: $tar_sha256,
+            size: ($tar_size | tonumber)
+          },
+          {
+            filename: ($zip_filepath | split("/") | last),
+            md5: $zip_md5,
+            sha1: $zip_sha1,
+            sha256: $zip_sha256,
+            size: ($zip_size | tonumber)
+          }
+        ],
+        metadata: {
+          source: "https://www.1c-bitrix.ru/download/cms.php",
+          repository: "https://github.com/crasivo/bitrix-archives"
         }
-      ],
-      metadata: {
-        source: "https://www.1c-bitrix.ru/download/cms.php",
-        repository: "https://github.com/crasivo/bitrix-archives"
-      }
-    }' > "$1"
+      }' > "$1"
 }
 
-# @description Извлечение информации о версии модуля 'main' из zip архива
-# @param string $1 Абсолютный путь к zip архиву
+# @description Extract main version from zip archive
+# @param $1 string Filepath (zip)
 function _bx_extract_main_version() {
     # Extract PHP content
     local php_content
@@ -127,9 +148,9 @@ function _bx_extract_main_version() {
     fi
 }
 
-# @description Загрузка архива в орк
-# @param string $1 Output filepath
-# @param string $2 File extension
+# @description Download archive
+# @param $1 string Output filepath
+# @param $2 string File extension
 function _bx_download_distro() {
     if [[ -f $1 ]]; then
         echo "[DEBUG] Local file $1 already exists"
@@ -150,6 +171,8 @@ function _bx_download_distro() {
     echo "[INFO] File was successfully downloaded: $1"
 }
 
+# @description Dump file meta (tar)
+# @param $1 string Filepath
 function _bx_dump_tar_meta() {
     echo "[INFO] Extract hashes - $1"
     BITRIX_META_TAR_SIZE=$(stat -c%s "$1")
@@ -164,6 +187,8 @@ function _bx_dump_tar_meta() {
     echo "$BITRIX_META_TAR_SHA256" > "$1.sha256"
 }
 
+# @description Dump file meta (zip)
+# @param $1 string Filepath
 function _bx_dump_zip_meta() {
     echo "[INFO] Extract hashes - $1"
     BITRIX_META_ZIP_SIZE=$(stat -c%s "$1")
@@ -178,7 +203,7 @@ function _bx_dump_zip_meta() {
     echo "$BITRIX_META_ZIP_SHA256" > "$1.sha256"
 }
 
-# @description Экспорт всех переменных для GitHub Action
+# @description Export variables (github action)
 function _bx_export_github_variables() {
     if [[ -z "$GITHUB_ENV" ]]; then
         echo "[DEBUG] Skip export GitHub variables"
@@ -207,12 +232,17 @@ function _cmd_process() {
         exit 1
     fi
 
-    # Step 2: Process TAR archive
+    # Step 2: Check release
+    if [[ -z "$GITHUB_RELEASE_TAG" ]]; then
+        _bx_check_release "GITHUB_RELEASE_TAG"
+    fi
+
+    # Step 3: Process TAR archive
     BITRIX_META_TAR_FILEPATH="$output_dir/${BITRIX_DISTRO_CODE}_encode.tar.gz"
     _bx_download_distro "$BITRIX_META_TAR_FILEPATH" "tar.gz"
     _bx_dump_tar_meta "$BITRIX_META_TAR_FILEPATH"
 
-    # Step 3: Create manifest
+    # Step 4: Create manifest
     BITRIX_MANIFEST_FILEPATH="$output_dir/manifest.json"
     _bx_create_final_manifest "$BITRIX_MANIFEST_FILEPATH"
 }
