@@ -181,7 +181,6 @@ function _bx_dump_tar_meta() {
     BITRIX_META_TAR_SHA1=$(sha1sum "$1" | awk '{ print $1 }')
     BITRIX_META_TAR_SHA256=$(sha256sum "$1" | awk '{ print $1 }')
     # Dump
-    echo "$BITRIX_META_TAR_SIZE" > "$1.size"
     echo "$BITRIX_META_TAR_MD5" > "$1.md5"
     echo "$BITRIX_META_TAR_SHA1" > "$1.sha1"
     echo "$BITRIX_META_TAR_SHA256" > "$1.sha256"
@@ -197,7 +196,6 @@ function _bx_dump_zip_meta() {
     BITRIX_META_ZIP_SHA1=$(sha1sum "$1" | awk '{ print $1 }')
     BITRIX_META_ZIP_SHA256=$(sha256sum "$1" | awk '{ print $1 }')
     # Dump
-    echo "$BITRIX_META_ZIP_SIZE" > "$1.size"
     echo "$BITRIX_META_ZIP_MD5" > "$1.md5"
     echo "$BITRIX_META_ZIP_SHA1" > "$1.sha1"
     echo "$BITRIX_META_ZIP_SHA256" > "$1.sha256"
