@@ -48,7 +48,7 @@ jobs:
         if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != '' && env.BITRIX_MAIN_VERSION != 'null'
         with:
           tag_name: ${{ matrix.distro }}-${{ env.BITRIX_MAIN_VERSION }}
-          name: "${{ matrix.distro }} v${{ env.BITRIX_MAIN_VERSION }}"
+          name: "Distro: ${{ matrix.distro }} v${{ env.BITRIX_MAIN_VERSION }}"
           body: |
             ## 📦 Distribution Information
 
