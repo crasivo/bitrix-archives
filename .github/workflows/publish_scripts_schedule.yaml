@@ -56,10 +56,10 @@ jobs:
             - SHA256: `${{ env.BITRIX_META_SCRIPT_SHA256 }}`
           files: |
             ${{ env.BITRIX_MANIFEST_PATH }}
-            ${{ env.BITRIX_SCRIPT_PATH }}
-            ${{ env.BITRIX_SCRIPT_PATH }}.md5
-            ${{ env.BITRIX_SCRIPT_PATH }}.sha1
-            ${{ env.BITRIX_SCRIPT_PATH }}.sha256
+            ${{ env.BITRIX_META_SCRIPT_PATH }}
+            ${{ env.BITRIX_META_SCRIPT_PATH }}.md5
+            ${{ env.BITRIX_META_SCRIPT_PATH }}.sha1
+            ${{ env.BITRIX_META_SCRIPT_PATH }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
