@@ -41,8 +41,8 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ matrix.script_name }}-${{ env.BITRIX_MAIN_VERSION }}
-          name: "${{ matrix.script_name }} v${{ env.BITRIX_MAIN_VERSION }}"
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "Script: ${{ github.event.inputs.script_name }} (${{ env.RELEASE_DATE }})"
           body: |
             ## 📦 Информация о релизе
 
