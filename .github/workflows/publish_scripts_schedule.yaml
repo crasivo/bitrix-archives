@@ -33,7 +33,7 @@ jobs:
       - name: Download script & create manifest
         id: analysis
         run: |
-          ./bin/download-distro.sh ${{ matrix.script_name }}
+          ./bin/download-script.sh ${{ matrix.script_name }}
         env:
           GITHUB_RELEASE_DATE: ${{ env.RELEASE_DATE }}
           GITHUB_RELEASE_TAG: ${{ env.RELEASE_TAG }}
@@ -76,3 +76,5 @@ jobs:
             📅 *Kernel (main) date:* `${{ env.BITRIX_MAIN_VERSION_DATE }}`
 
             🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }})
+
+            #github #bitrix #script
