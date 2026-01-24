@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Define global variables
         run: |
-          echo "RELEASE_TAG=${{ github.event.inputs.script_name }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
+          echo "RELEASE_TAG=${{ matrix.script_name }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
           echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
       - name: Download script & create manifest
         id: analysis
@@ -42,7 +42,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
-          name: "Script: ${{ github.event.inputs.script_name }} (${{ env.RELEASE_DATE }})"
+          name: "Script: ${{ matrix.script_name }} (${{ env.RELEASE_DATE }})"
           body: |
             ## 📦 Информация о релизе
 
