@@ -70,11 +70,9 @@ jobs:
           disable_notification: true
           format: html
           message: |
-            🚀 <b>New Bitrix Script</b>
+            🚀 <b>Новый релиз скрипта!</b>
 
-            📦 <b>Script:</b> <code>${{ matrix.script_name }}</code>
-            🔹 <b>Kernel version:</b> <code>${{ env.BITRIX_MAIN_VERSION }}</code>
-            📅 <b>Kernel date:</b> <code>${{ env.BITRIX_MAIN_VERSION_DATE }}</code>
+            <b>Наименование:</b> <code>${{ matrix.script_name }}</code>
 
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
 
