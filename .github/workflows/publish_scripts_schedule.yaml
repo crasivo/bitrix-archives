@@ -1,0 +1,65 @@
+name: Scheduled publish all scripts
+
+on:
+  schedule:
+    # At 05:00 on Sunday
+    - cron: '0 5 * * 7'
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual trigger'
+        required: false
+        default: 'Manual maintenance'
+
+jobs:
+  publish_scripts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        script: [
+          bitrixsetup.php,
+          bitrix_server_test.php,
+          restore.php
+        ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Define global variables
+        run: |
+          echo "RELEASE_TAG=${{ github.event.inputs.script_name }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
+          echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
+      - name: Run analysis and download
+        id: analysis
+        run: |
+          ./bin/download-distro.sh ${{ matrix.script }}
+        env:
+          GITHUB_RELEASE_DATE: ${{ env.RELEASE_DATE }}
+          GITHUB_RELEASE_TAG: ${{ env.RELEASE_TAG }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ matrix.script }}-${{ env.BITRIX_MAIN_VERSION }}
+          name: "${{ matrix.distro }} v${{ env.BITRIX_MAIN_VERSION }}"
+          body: |
+            ## 📦 Информация о релизе
+
+            Данный релиз содержит файл `${{ matrix.script }}`, который был загружен с официального сайта 1С-Битрикс.
+
+            **Мета информация:**
+            - Наименование: ${{ matrix.script }}
+            - MD5: `${{ env.BITRIX_META_SCRIPT_MD5 }}`
+            - SHA1: `${{ env.BITRIX_META_SCRIPT_SHA1 }}`
+            - SHA256: `${{ env.BITRIX_META_SCRIPT_SHA256 }}`
+          files: |
+            ${{ env.BITRIX_MANIFEST_PATH }}
+            ${{ env.BITRIX_SCRIPT_PATH }}
+            ${{ env.BITRIX_SCRIPT_PATH }}.md5
+            ${{ env.BITRIX_SCRIPT_PATH }}.sha1
+            ${{ env.BITRIX_SCRIPT_PATH }}.sha256
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

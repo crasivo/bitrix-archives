@@ -83,22 +83,3 @@ jobs:
             ${{ env.BITRIX_META_TAR_FILEPATH }}.*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Send Telegram Notification (Success)
-        # Уведомление присылаем только при создании НОВОГО релиза
-        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != '' && env.BITRIX_MAIN_VERSION != 'null'
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
-          message: |
-            🚀 *New Bitrix Release Published*
-
-            📦 *Edition:* `${{ matrix.distro }}`
-            🔹 *Kernel version (main):* `${{ env.BITRIX_MAIN_VERSION }}`
-            📅 *Release date:* `${{ env.BITRIX_MAIN_VERSION_DATE }}`
-
-            🔗 [View Release Assets](https://github.com/${{ github.repository }}/releases/tag/${{ matrix.distro }}-${{ env.BITRIX_MAIN_VERSION }})
-
-            _Automated sync completed successfully._
