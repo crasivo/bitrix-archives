@@ -62,7 +62,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Send Telegram Notification
-        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != ''
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
