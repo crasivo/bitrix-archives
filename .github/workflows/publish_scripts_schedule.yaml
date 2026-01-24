@@ -2,8 +2,7 @@ name: Scheduled publish all scripts
 
 on:
   schedule:
-    # At 05:00 on Sunday
-    - cron: '0 5 * * 7'
+    - cron: '0 5 * * *'
   workflow_dispatch:
     inputs:
       reason:

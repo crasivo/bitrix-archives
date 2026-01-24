@@ -2,8 +2,7 @@ name: Scheduled publish all distros
 
 on:
   schedule:
-    # Запуск каждый день в 00:00 UTC (03:00 MSK)
-    - cron: '0 0 * * *'
+    - cron: '0 3 * * *'
   workflow_dispatch:
     inputs:
       reason:
