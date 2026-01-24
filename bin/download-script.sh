@@ -39,6 +39,7 @@ BITRIX_META_SCRIPT_SHA256=${BITRIX_META_SCRIPT_SHA256:-}
 # Functions
 # ----------------------------------------------------------------
 
+# @description Create manifest.json
 function _bx_create_final_manifest() {
   echo "🧾 Create manifest.json"
   jq -n \
