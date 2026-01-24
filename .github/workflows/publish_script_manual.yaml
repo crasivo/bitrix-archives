@@ -39,8 +39,8 @@ jobs:
 
             Данный релиз содержит файл `${{ github.event.inputs.script_name }}`, который был загружен с официального сайта 1С-Битрикс.
 
-            **Мета информация:**
-            - Наименование файла: `${{ github.event.inputs.script_name }}`
+            **File meta:**
+            - Name: `${{ matrix.script_name }}`
             - MD5: `${{ env.BITRIX_META_SCRIPT_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_SCRIPT_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_SCRIPT_SHA256 }}`
