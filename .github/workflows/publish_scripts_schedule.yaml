@@ -31,7 +31,7 @@ jobs:
         run: |
           echo "RELEASE_TAG=${{ github.event.inputs.script_name }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
           echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
-      - name: Run analysis and download
+      - name: Download script & create manifest
         id: analysis
         run: |
           ./bin/download-distro.sh ${{ matrix.script_name }}

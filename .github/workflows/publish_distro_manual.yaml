@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Run analysis and download
+      - name: Download distros & create manifest
         id: analysis
         run: |
           chmod +x ./bin/download-distro.sh
