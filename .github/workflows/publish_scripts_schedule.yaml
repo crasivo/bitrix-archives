@@ -48,7 +48,7 @@ jobs:
 
             Данный релиз содержит файл `${{ matrix.script_name }}`, который был загружен с официального сайта 1С-Битрикс.
 
-            **File meta:**
+            **Мета информация:**
             - Наименование файла: `${{ matrix.script_name }}`
             - MD5: `${{ env.BITRIX_META_SCRIPT_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_SCRIPT_SHA1 }}`
@@ -61,4 +61,18 @@ jobs:
             ${{ env.BITRIX_META_SCRIPT_PATH }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Send Telegram Notification
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          disable_notification: true
+          format: markdown
+          message: |
+            🚀 *New Bitrix Script*
 
+            📦 *Edition:* `${{ matrix.distro }}`
+            🔹 *Kernel (main) version:* `${{ env.BITRIX_MAIN_VERSION }}`
+            📅 *Kernel (main) date:* `${{ env.BITRIX_MAIN_VERSION_DATE }}`
+
+            🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }})
