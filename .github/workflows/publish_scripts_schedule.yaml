@@ -49,7 +49,7 @@ jobs:
             Данный релиз содержит файл `${{ matrix.script_name }}`, который был загружен с официального сайта 1С-Битрикс.
 
             **File meta:**
-            - Name: `${{ matrix.script_name }}`
+            - Наименование файла: `${{ matrix.script_name }}`
             - MD5: `${{ env.BITRIX_META_SCRIPT_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_SCRIPT_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_SCRIPT_SHA256 }}`
