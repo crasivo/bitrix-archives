@@ -62,19 +62,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Send Telegram Notification
+        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_MAIN_VERSION != ''
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           disable_notification: true
-          format: markdown
+          format: html
           message: |
-            🚀 *New Bitrix Script*
+            🚀 <b>New Bitrix Script</b>
 
-            📦 *Edition:* `${{ matrix.distro }}`
-            🔹 *Kernel (main) version:* `${{ env.BITRIX_MAIN_VERSION }}`
-            📅 *Kernel (main) date:* `${{ env.BITRIX_MAIN_VERSION_DATE }}`
+            📦 <b>Script:</b> <code>${{ matrix.script_name }}</code>
+            🔹 <b>Kernel version:</b> <code>${{ env.BITRIX_MAIN_VERSION }}</code>
+            📅 <b>Kernel date:</b> <code>${{ env.BITRIX_MAIN_VERSION_DATE }}</code>
 
-            🔗 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }})
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
 
             #github #bitrix #script
