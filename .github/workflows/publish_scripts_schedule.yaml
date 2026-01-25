@@ -36,7 +36,7 @@ jobs:
           echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
 
       - name: Download script & create manifest
-        id: analysis
+        id: download_script
         uses: nick-fields/retry@v3
         with:
           timeout_minutes: 10
@@ -49,6 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
+        id: publish_release
         uses: softprops/action-gh-release@v2
         if: env.SKIP_PUBLISH != 'true'
         with:
@@ -65,8 +66,9 @@ jobs:
             ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
-        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
+        id: telegram_notification
         uses: jiacai2050/telegram-action@v1
+        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -75,7 +77,9 @@ jobs:
           message: |
             🚀 <b>Опубликован новый скрипт!</b>
 
-            📦 Файл: <code>${{ matrix.distro }}</code>
+            📦 Файл: <code>${{ matrix.script_name }}</code>
+
+            Аобсолютный путь: `${{ env.BITRIX_MANIFEST_PATH }}`
 
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
 
@@ -85,8 +89,9 @@ jobs:
           BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
 
       - name: Send Telegram Alert
-        if: failure() && inputs.notify_telegram != 'false'
+        id: telegram_alert
         uses: jiacai2050/telegram-action@v1
+        if: failure() && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
