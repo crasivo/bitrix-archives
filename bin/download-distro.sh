@@ -46,6 +46,7 @@ function _git_check_release_tag_exists() {
   else
     # shellcheck disable=SC2155
     local http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Accept: application/vnd.github+json" \
       "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
   fi
   if [[ "$http_status" == '404' ]]; then
