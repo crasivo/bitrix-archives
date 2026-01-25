@@ -73,13 +73,10 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
-          message-file: ${{ env.BITRIX_MANIFEST_PATH }}
           message: |
             🚀 <b>Опубликован новый скрипт!</b>
 
-            📦 Файл: <code>${{ matrix.script_name }}</code>
-
-            Аобсолютный путь: `${{ env.BITRIX_MANIFEST_PATH }}`
+            📦 Скрипт: <code>${{ matrix.script_name }}</code>
 
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
 
