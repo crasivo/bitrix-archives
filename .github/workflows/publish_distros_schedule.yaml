@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   publish_distro:
-    name: Sync ${{ matrix.distro }}
+    name: Publish ${{ matrix.distro }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
