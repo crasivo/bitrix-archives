@@ -14,30 +14,63 @@ S_FILEPATH=$(realpath "$0")
 S_CONTEXT_DIR=$(dirname "$S_FILEPATH")
 S_ROOT_DIR=$(realpath "$S_CONTEXT_DIR/../")
 
-# Options
-O_OUTPUT_DIR="$S_ROOT_DIR/tmp"
-
 # GitHub
-GITHUB_REPO='crasivo/bitrix-archives'
 GITHUB_ENV=${GITHUB_ENV:-}
 GITHUB_TOKEN=${GITHUB_TOKEN:-}
-GITHUB_RELEASE_DATE=${GITHUB_RELEASE_DATE:-}
-GITHUB_RELEASE_TAG=${GITHUB_RELEASE_TAG:-}
 
 # Bitrix: General
 BITRIX_SCRIPT_NAME=${BITRIX_SCRIPT_NAME:-}
+BITRIX_SCRIPT_PATH=${BITRIX_SCRIPT_PATH:-}
 BITRIX_MANIFEST_PATH=${BITRIX_MANIFEST_PATH:-}
-
-# Bitrix: Meta
-BITRIX_META_SCRIPT_PATH=${BITRIX_META_SCRIPT_PATH:-}
-BITRIX_META_SCRIPT_SIZE=${BITRIX_META_SCRIPT_SIZE:-}
-BITRIX_META_SCRIPT_MD5=${BITRIX_META_SCRIPT_MD5:-}
-BITRIX_META_SCRIPT_SHA1=${BITRIX_META_SCRIPT_SHA1:-}
-BITRIX_META_SCRIPT_SHA256=${BITRIX_META_SCRIPT_SHA256:-}
+BITRIX_OUTPUT_DIR=${BITRIX_OUTPUT_DIR:-}
+BITRIX_RELEASE_TAG=${BITRIX_RELEASE_TAG:-}
 
 # ----------------------------------------------------------------
 # Functions
 # ----------------------------------------------------------------
+
+# @description Check release exists
+# @param $1 string Tag
+function _git_check_release_tag_exists() {
+  echo "🔎 Check release '$1'"
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    # shellcheck disable=SC2155
+    local http_status=$(curl -s -o /dev/null -I -w "%{http_code}" \
+      -H "Authorization: Bearer $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
+  else
+    # shellcheck disable=SC2155
+    local http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
+  fi
+  if [[ "$http_status" == '404' ]]; then
+    echo "➡️ Release '$1' not found. Continue..."
+    return
+  fi
+
+  # Notify Github
+  echo "➡️ Release '$1' already exists. Skipping..."
+  if [[ -n "$GITHUB_ENV" ]]; then
+    echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
+  fi
+
+  # Stop execute
+  exit 0
+}
+
+# @description Export BITRIX_* variables for Github Action
+function _git_export_bitrix_variables() {
+  if [[ -z "$GITHUB_ENV" ]]; then
+    echo "🐞 Skipping export variables (GitHub Action)"
+    return
+  fi
+  echo "⬆️ Export variables (GitHub Action)"
+  for var in $(compgen -v | grep '^BITRIX_'); do
+    echo "$var=${!var}" >> "$GITHUB_ENV"
+  done
+}
 
 # @description Create initial manifest.json
 # @param $1 string Output filepath
@@ -52,45 +85,65 @@ function _bx_create_initial_manifest() {
     }' > "$1"
 }
 
-# @description Download PHP script
-# @param $1 string Output dir
-# @param $2 string Filename
+# @description Download archive
+# @param $1 string Output filepath
 function _bx_download_script() {
-  local download_url="https://www.1c-bitrix.ru/download/scripts/$2"
+  # shellcheck disable=SC2155
+  local basename=$(basename "$1")
+  if [[ -f "$1" ]]; then
+    # shellcheck disable=SC2086
+    echo "🐞 Local file '$basename' already exists. Skipping..."
+    return
+  fi
+
+  local download_url="https://www.1c-bitrix.ru/download/scripts/${BITRIX_SCRIPT_NAME}"
   echo "⬇️ Downloading PHP script ($download_url)..."
-  if [[ -f "$1/$2" ]]; then
-    echo "File $1 already exists. Skipping."
-    return
-  fi
-
-  curl -sSL "$download_url" -o "$1/$2"
+  curl -SL "$download_url" -o "$1"
 }
 
-# @description Dump file meta (bitrixsetup.php)
-# @param $1 string Filepath
-function _bx_dump_script_meta() {
-  echo "ℹ️ Extracting file meta"
-  BITRIX_META_SCRIPT_SIZE=$(stat -c%s "$1")
-  BITRIX_META_SCRIPT_SIZE_MB=$(echo "scale=2; $BITRIX_META_SCRIPT_SIZE / 1024" | bc)
-  BITRIX_META_SCRIPT_MD5=$(md5sum "$1" | awk '{ print $1 }')
-  BITRIX_META_SCRIPT_SHA1=$(sha1sum "$1" | awk '{ print $1 }')
-  BITRIX_META_SCRIPT_SHA256=$(sha256sum "$1" | awk '{ print $1 }')
-  # Dump
-  echo "$BITRIX_META_SCRIPT_MD5" > "$1.md5"
-  echo "$BITRIX_META_SCRIPT_SHA1" > "$1.sha1"
-  echo "$BITRIX_META_SCRIPT_SHA256" > "$1.sha256"
-}
+# @description Extract file meta (tar)
+# @param $1 string Input script
+# @param $2 string Output manifest.json
+function _bx_extract_script_meta() {
+  # shellcheck disable=SC2155
+  local basename=$(basename "$1")
+  # shellcheck disable=SC2155
+  local dirname=$(dirname "$1")
+  echo "ℹ️ Extracting meta for $basename"
+  local size=$(stat -c%s "$1")
+  local md5=$(md5sum "$1" | awk '{ print $1 }')
+  local sha1=$(sha1sum "$1" | awk '{ print $1 }')
+  local sha256=$(sha256sum "$1" | awk '{ print $1 }')
 
-# @description Export variables (github action)
-function _bx_export_github_variables() {
-  echo "⬆️ Export variables (GitHub Action)"
-  if [[ -z "$GITHUB_ENV" ]]; then
-    echo "Skipping..."
-    return
+  # Dump file checksums
+  if [[ -n "$md5" ]]; then
+      echo "$md5" > "$1.md5"
+      echo "$md5 $basename" >> "$dirname/checksums_md5.txt"
   fi
-  for var in $(compgen -v | grep '^BITRIX_'); do
-    echo "$var=${!var}" >> "$GITHUB_ENV"
-  done
+  if [[ -n "$sha1" ]]; then
+      echo "$sha1" > "$1.sha1"
+      echo "$sha1 $basename" >> "$dirname/checksums_sha1.txt"
+  fi
+  if [[ -n "$sha256" ]]; then
+      echo "$sha256" > "$1.sha256"
+      echo "$sha256 $basename" >> "$dirname/checksums_sha256.txt"
+  fi
+
+  # Dump manifest assets
+  # shellcheck disable=SC2155
+  local tmp_manifest=$(mktemp)
+  jq --arg name "$basename" \
+     --arg md5 "$md5" \
+     --arg sha1 "$sha1" \
+     --arg sha256 "$sha256" \
+     --arg size "$size" \
+     '.assets += [{
+         "name": $name,
+         "size": ($size | tonumber),
+         "md5": $md5,
+         "sha1": $sha1,
+         "sha256": $sha256
+     }]' "$2" > "$tmp_manifest" && mv -f "$tmp_manifest" "$2"
 }
 
 # ----------------------------------------------------------------
@@ -99,17 +152,30 @@ function _bx_export_github_variables() {
 
 # @description Run process
 function _cmd_run() {
-  local output_dir="$O_OUTPUT_DIR/$BITRIX_SCRIPT_NAME"
-  mkdir -p "$output_dir"
+  if [[ -z "$BITRIX_OUTPUT_DIR" ]]; then
+    BITRIX_OUTPUT_DIR="$S_ROOT_DIR/dist/$BITRIX_DISTRO_TYPE/$BITRIX_DISTRO_CODE"
+  fi
+
+  # Step 0. Prepare
+  mkdir -p "$BITRIX_OUTPUT_DIR"
+  BITRIX_MANIFEST_PATH="$BITRIX_OUTPUT_DIR/manifest.json"
 
   # Step 1. Download script
-  BITRIX_META_SCRIPT_PATH="$output_dir/$BITRIX_SCRIPT_NAME"
-  _bx_download_script "$output_dir" "$BITRIX_SCRIPT_NAME"
-  _bx_dump_script_meta "$BITRIX_META_SCRIPT_PATH"
+  BITRIX_SCRIPT_PATH="$BITRIX_OUTPUT_DIR/$BITRIX_SCRIPT_NAME"
+  _bx_download_script "$BITRIX_SCRIPT_PATH"
+
+  # Step 2. Check release duplicates
+  BITRIX_RELEASE_TAG="${BITRIX_SCRIPT_NAME}-$(date +'%Y%m%d')"
+  _git_check_release_tag_exists "$BITRIX_RELEASE_TAG"
 
   # Step 2. Create manifest.json
-  BITRIX_MANIFEST_PATH="$output_dir/manifest.json"
   _bx_create_initial_manifest "$BITRIX_MANIFEST_PATH"
+
+  # Step 3. Extract script meta
+  _bx_extract_script_meta "$BITRIX_SCRIPT_PATH" "$BITRIX_MANIFEST_PATH"
+
+  # Export variables (github)
+  _bx_export_github_variables
 }
 
 # ----------------------------------------------------------------
@@ -148,6 +214,3 @@ done
 
 # Run process
 _cmd_run
-
-# Export variables (github)
-_bx_export_github_variables

@@ -109,7 +109,6 @@ function _bx_create_initial_manifest() {
 function _bx_download_distro() {
   # shellcheck disable=SC2155
   local basename=$(basename "$1")
-
   if [[ -f "$1" ]]; then
     # shellcheck disable=SC2086
     echo "🐞 Local file '$basename' already exists. Skipping..."

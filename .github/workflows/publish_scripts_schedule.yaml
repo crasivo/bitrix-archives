@@ -2,13 +2,17 @@ name: Scheduled publish all scripts
 
 on:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: '0 3 * * 7' # At 03:00 on Sunday.
   workflow_dispatch:
     inputs:
       reason:
         description: 'Reason for manual trigger'
         required: false
         default: 'Manual maintenance'
+      notify_telegram:
+        description: 'Telegram notifications'
+        required: true
+        default: true
 
 jobs:
   publish_scripts:
@@ -26,61 +30,56 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
       - name: Define global variables
         run: |
-          echo "RELEASE_TAG=${{ matrix.script_name }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
           echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
+
       - name: Download script & create manifest
         id: analysis
         run: |
           ./bin/download-script.sh ${{ matrix.script_name }}
         env:
-          GITHUB_RELEASE_DATE: ${{ env.RELEASE_DATE }}
-          GITHUB_RELEASE_TAG: ${{ env.RELEASE_TAG }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+        if: env.SKIP_PUBLISH != 'true'
         with:
-          tag_name: ${{ env.RELEASE_TAG }}
+          tag_name: ${{ env.BITRIX_RELEASE_TAG }}
           name: "Script: ${{ matrix.script_name }} (${{ env.RELEASE_DATE }})"
           body: |
             ## 📦 Информация о релизе
 
-            Данный релиз содержит файл `${{ matrix.script_name }}`, который был загружен с официального сайта 1С-Битрикс.
+            Данный релиз содержит оригинальный скрипт `${{ matrix.script_name }}` 1C-Bitrix,
+            который был загружен с официального сайта 1С-Битрикс.
 
-            **Мета информация:**
-            - Наименование файла: `${{ matrix.script_name }}`
-            - MD5: `${{ env.BITRIX_META_SCRIPT_MD5 }}`
-            - SHA1: `${{ env.BITRIX_META_SCRIPT_SHA1 }}`
-            - SHA256: `${{ env.BITRIX_META_SCRIPT_SHA256 }}`
+            Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
           files: |
-            ${{ env.BITRIX_MANIFEST_PATH }}
-            ${{ env.BITRIX_META_SCRIPT_PATH }}
-            ${{ env.BITRIX_META_SCRIPT_PATH }}.md5
-            ${{ env.BITRIX_META_SCRIPT_PATH }}.sha1
-            ${{ env.BITRIX_META_SCRIPT_PATH }}.sha256
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
-        if: success()
+        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat-id: "@bitrix_archives"
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message-file: ${{ env.BITRIX_MANIFEST_PATH }}
           message: |
             🚀 <b>Опубликован новый скрипт!</b>
 
-            📦 Наименование файла: <code>${{ env.BITRIX_SCRIPT_NAME }}</code>
-            ---
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">Посмотреть релиз</a>
+            📦 Файл: <code>${{ matrix.distro }}</code>
+
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
 
             #github #release #bitrix #script
+        env:
+          BITRIX_MANIFEST_PATH: ${{ env.BITRIX_MANIFEST_PATH }}
+          BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
 
       - name: Send Telegram Alert
-        if: failure()
+        if: failure() && inputs.notify_telegram != 'false'
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
