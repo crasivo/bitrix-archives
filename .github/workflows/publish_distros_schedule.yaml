@@ -12,8 +12,7 @@ on:
       notify_telegram:
         description: 'Telegram notifications'
         required: true
-        default: false
-        options: [false,true]
+        default: true
 
 jobs:
   publish_distro:
@@ -74,7 +73,7 @@ jobs:
             ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
-        if: success() && env.SKIP_PUBLISH != 'true'
+        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -98,7 +97,7 @@ jobs:
           BITRIX_SM_VERSION_DATE: ${{ env.BITRIX_SM_VERSION_DATE }}
 
       - name: Send Telegram Alert
-        if: failure()
+        if: failure() && inputs.notify_telegram != 'false'
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
