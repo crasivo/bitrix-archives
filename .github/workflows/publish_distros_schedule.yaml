@@ -62,14 +62,14 @@ jobs:
             ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
-        if: success()
+        if: success() && env.SKIP_PUBLISH != 'true'
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message: |
-            🚀 <b>GitHub Action: Опубликован новый дистрибутив!</b>
+            🚀 <b>Опубликован новый дистрибутив!</b>
 
             📦 Редакция: <code>${{ matrix.distro }}</code>
             🏷️ Версия ядра (main): <code>${{ env.BITRIX_SM_VERSION }}</code>
