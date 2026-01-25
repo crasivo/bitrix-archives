@@ -119,7 +119,7 @@ function _bx_download_distro() {
   local extension=${basename#*.}
   local download_url
   if [[ $BITRIX_DISTRO_TYPE == portal ]]; then
-    download_url="https://www.1c-bitrix.ru/download/portal/$1.$extension"
+    download_url="https://www.1c-bitrix.ru/download/portal/${BITRIX_DISTRO_CODE}_encode.$extension"
   else
     download_url="https://www.1c-bitrix.ru/download/${BITRIX_DISTRO_CODE}_encode.$extension"
   fi
