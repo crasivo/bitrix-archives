@@ -109,3 +109,5 @@ jobs:
             📦 Редакция: <code>${{ matrix.distro }}</code>
 
             🔗 <a href="https://github.com/${{ github.repository }}/actions">Посмотреть журнал</a>
+
+            #github #alert #bitrix #distro #${{ matrix.distro }}

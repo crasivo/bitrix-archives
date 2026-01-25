@@ -87,5 +87,9 @@ jobs:
           parse-mode: html
           message: |
             🚨 <b>Ошибка публикации релиза</b>
-            📦 Редакция: <code>${{ matrix.script_name }}</code>
+
+            📦 Файл: <code>${{ matrix.script_name }}</code>
+
             🔗 <a href="https://github.com/${{ github.repository }}/${{ github.action_path }}">Посмотреть релиз</a>
+
+            #github #alert #bitrix #script
