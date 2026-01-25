@@ -59,23 +59,21 @@ jobs:
             - Release date: `${{ env.BITRIX_MAIN_VERSION_DATE }}`
 
             **Tar meta:**
-            - Filename: `${{ matrix.distro }}.tar.gz`
+            - Size: ${{ env.BITRIX_META_TAR_SIZE_MB }} Mb
             - MD5: `${{ env.BITRIX_META_TAR_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_TAR_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_TAR_SHA256 }}`
-            - Size: ${{ env.BITRIX_META_TAR_SIZE_MB }} Mb
 
             **Zip meta:**
-            - Filename: `${{ matrix.distro }}.zip`
+            - Size: ${{ env.BITRIX_META_ZIP_SIZE_MB }} Mb
             - MD5: `${{ env.BITRIX_META_ZIP_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_ZIP_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_ZIP_SHA256 }}`
-            - Size: ${{ env.BITRIX_META_ZIP_SIZE_MB }} Mb
 
             Релиз содержит файл <a href="https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/manifest.json">manifest.json</a>, в котором содержиться вся необходимая информация, включая основные мета-данные для каждого архива.
 
             ---
-            Сгенерировано автоматическии через GitHub Action.
+            Описание сгенерировано автоматическии через GitHub Action.
           files: |
             ${{ env.BITRIX_MANIFEST_FILEPATH }}
             ${{ env.BITRIX_META_ZIP_FILEPATH }}
