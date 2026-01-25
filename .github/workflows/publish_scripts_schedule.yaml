@@ -67,4 +67,8 @@ jobs:
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: "@bitrix_archives"
-          message: "Hello!"
+          parse-mode: html
+          message: |
+            🚀 <b>New Bitrix Script</b>
+            📦 Filename: <code>${{ env.BITRIX_SCRIPT_NAME }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
