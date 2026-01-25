@@ -61,3 +61,10 @@ jobs:
             ${{ env.BITRIX_META_SCRIPT_PATH }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Send Telegram Notification
+        if: success()
+        uses: jiacai2050/telegram-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: "@bitrix_archives"
+          message: "Hello!"
