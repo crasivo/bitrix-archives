@@ -1,8 +1,8 @@
-name: Scheduled publish all distros
+name: Scheduled Distros Publish (all)
 
 on:
   schedule:
-    - cron: '0 3 * * *' # At 05:00.
+    - cron: '0 3 * * *' # 03:00 UTC
   workflow_dispatch:
     inputs:
       reason:
@@ -10,15 +10,21 @@ on:
         required: false
         default: 'Manual maintenance'
       notify_telegram:
-        description: 'Telegram notifications'
-        required: true
+        description: 'Send Telegram notifications'
+        type: boolean
         default: true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish_distro:
+    name: Sync ${{ matrix.distro }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
 
     strategy:
       fail-fast: false
@@ -38,12 +44,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Важно для корректной работы с тегами
 
       - name: Download distro & create manifest
         id: download_distro
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 10
+          timeout_minutes: 15
           max_attempts: 3
           retry_on: error
           command: |
@@ -55,61 +63,72 @@ jobs:
       - name: Create GitHub Release
         id: publish_release
         uses: softprops/action-gh-release@v2
-        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_SM_VERSION != '' && env.BITRIX_SM_VERSION != 'null'
+        if: env.SKIP_PUBLISH != 'true' && env.BITRIX_SM_VERSION != ''
         with:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
-          name: "Distro: ${{ matrix.distro }} v${{ env.BITRIX_SM_VERSION }}"
+          name: "${{ matrix.distro }} v${{ env.BITRIX_SM_VERSION }} (${{ github.event.updated_at }})"
+          # Двуязычное описание
           body: |
-            ## 📦 Информация о релизе
+            ## 📦 Release Info / Информация о релизе
 
-            Данный релиз содержит оригинальные архивы для редакции `${{ matrix.distro }}` 1C-Bitrix,
-            которые были загружены с официального сайта 1С-Битрикс.
+            ### English
+            This release contains original 1C-Bitrix archives for the edition `${{ matrix.distro }}`.
+            Downloaded from official Bitrix servers.
 
-            **Ядро (main):**
-            - Версия: `${{ env.BITRIX_SM_VERSION }}`
-            - Дата выпуска: `${{ env.BITRIX_SM_VERSION_DATE }}`
+            - **Kernel (main) version:** `${{ env.BITRIX_SM_VERSION }}`
+            - **Kernel release date:** `${{ env.BITRIX_SM_VERSION_DATE }}`
+            - **Edition (distro):** `${{ matrix.distro }}`
 
-            Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
+            ### Русский
+            Данный релиз содержит оригинальные архивы для редакции `${{ matrix.distro }}` 1C-Битрикс.
+            Загружено с официальных серверов Битрикс.
+
+            - **Версия ядра (main):** `${{ env.BITRIX_SM_VERSION }}`
+            - **Дата выпуска ядра:** `${{ env.BITRIX_SM_VERSION_DATE }}`
+            - **Редакция (дистрибутив):** `${{ matrix.distro }}`
+
+            ---
+            *Check `manifest.json` for file checksums & module versions.*
           files: |
             ${{ env.BITRIX_OUTPUT_DIR }}/*
+          fail_on_unmatched_files: true
+          generate_release_notes: false
 
       - name: Send Telegram Notification
-        id: telegram_notification
+        if: |
+          success() &&
+          env.SKIP_PUBLISH != 'true' &&
+          (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
         uses: jiacai2050/telegram-action@v1
-        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message: |
-            🚀 <b>Опубликован новый дистрибутив!</b>
+            🚀 <b>New Bitrix Release!</b>
 
-            📦 Редакция: <code>${{ matrix.distro }}</code>
-            🏷️ Версия ядра (main): <code>${{ env.BITRIX_SM_VERSION }}</code>
-            📅 Дата выпуска ядра: <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
+            📦 <b>Distro:</b> <code>${{ matrix.distro }}</code>
+            🏷 <b>Kernel (main) version:</b> <code>${{ env.BITRIX_SM_VERSION }}</code>
+            📅 <b>Kernel release date:</b> <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
 
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">View on GitHub</a>
 
-            #github #release #bitrix #distro #${{ matrix.distro }}
-        env:
-          BITRIX_MANIFEST_PATH: ${{ env.BITRIX_MANIFEST_PATH }}
-          BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
-          BITRIX_SM_VERSION: ${{ env.BITRIX_SM_VERSION }}
-          BITRIX_SM_VERSION_DATE: ${{ env.BITRIX_SM_VERSION_DATE }}
+            #github #bitrix #release #distro #${{ matrix.distro }}
 
-      - name: Send Telegram Alert
-        id: telegram_alert
+      - name: Send Telegram Alert on Failure
+        if: |
+          failure() &&
+          (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
         uses: jiacai2050/telegram-action@v1
-        if: failure() && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message: |
-            🚨 <b>Ошибка публикации релиза</b>
+            🚨 <b>Failed to publish distro!</b>
 
-            📦 Редакция: <code>${{ matrix.distro }}</code>
+            📦 Distro: <code>${{ matrix.distro }}</code>
 
-            🔗 <a href="https://github.com/${{ github.repository }}/actions">Посмотреть журнал</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Check Logs</a>
 
-            #github #alert #bitrix #distro #${{ matrix.distro }}
+            #github #bitrix #alert #distro #${{ matrix.distro }}

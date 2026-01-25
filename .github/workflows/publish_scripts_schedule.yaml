@@ -1,24 +1,26 @@
-name: Scheduled publish all scripts
+name: Scheduled Scripts Sync
 
 on:
   schedule:
     - cron: '0 3 * * 0'
   workflow_dispatch:
     inputs:
-      reason:
-        description: 'Reason for manual trigger'
-        required: false
-        default: 'Manual maintenance'
       notify_telegram:
-        description: 'Telegram notifications'
-        required: true
+        description: 'Send Telegram notifications'
+        type: boolean
         default: true
+
+concurrency:
+  group: scripts-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   publish_scripts:
+    name: Sync ${{ matrix.script_name }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
     strategy:
       fail-fast: false
       matrix:
@@ -31,15 +33,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Define global variables
-        run: |
-          echo "RELEASE_DATE=$(date +'%d.%m.%Y')" >> $GITHUB_ENV;
-
       - name: Download script & create manifest
         id: download_script
         uses: nick-fields/retry@v3
         with:
-          timeout_minutes: 10
+          timeout_minutes: 5
           max_attempts: 3
           retry_on: error
           command: |
@@ -54,50 +52,54 @@ jobs:
         if: env.SKIP_PUBLISH != 'true'
         with:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
-          name: "Script: ${{ matrix.script_name }} (${{ env.RELEASE_DATE }})"
+          name: "Script: ${{ matrix.script_name }} (${{ github.event.updated_at }})"
           body: |
-            ## 📦 Информация о релизе
+            ## 📦 Release Info / Информация о релизе
 
-            Данный релиз содержит оригинальный скрипт `${{ matrix.script_name }}`,
-            который был загружен с официального сайта 1С-Битрикс.
+            ### [EN]
+            Original service script `${{ matrix.script_name }}` from 1C-Bitrix.
 
-            Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
+            ### [RU]
+            Оригинальный служебный скрипт `${{ matrix.script_name }}` от 1С-Битрикс.
+
+            ---
+            *Check `manifest.json` for file checksums.*
           files: |
             ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
-        id: telegram_notification
+        if: |
+          success() &&
+          env.SKIP_PUBLISH != 'true' &&
+          (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
         uses: jiacai2050/telegram-action@v1
-        if: success() && env.SKIP_PUBLISH != 'true' && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message: |
-            🚀 <b>Опубликован новый скрипт!</b>
+            🛠 <b>Bitrix Script Updated!</b>
 
-            📦 Скрипт: <code>${{ matrix.script_name }}</code>
+            📄 <b>File:</b> <code>${{ matrix.script_name }}</code>
 
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">View on GitHub</a>
 
-            #github #release #bitrix #script
-        env:
-          BITRIX_MANIFEST_PATH: ${{ env.BITRIX_MANIFEST_PATH }}
-          BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
+            #github #bitrix #release #script #${{ matrix.distro }}
 
       - name: Send Telegram Alert
-        id: telegram_alert
+        if: |
+          failure() &&
+          (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
         uses: jiacai2050/telegram-action@v1
-        if: failure() && inputs.notify_telegram != 'false'
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
           message: |
-            🚨 <b>Ошибка публикации релиза</b>
+            🚨 <b>Failed to publish script!</b>
 
-            📦 Файл: <code>${{ matrix.script_name }}</code>
+            📦 File: <code>${{ matrix.script_name }}</code>
 
-            🔗 <a href="https://github.com/${{ github.repository }}/actions">Посмотреть журнал</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Check Logs</a>
 
-            #github #alert #bitrix #script
+            #github #bitrix #alert #script
