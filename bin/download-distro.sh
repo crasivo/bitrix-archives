@@ -236,7 +236,7 @@ function _cmd_process() {
 
   # Step 2: Check release
   if [[ -z "$GITHUB_RELEASE_TAG" ]]; then
-    _bx_check_release_tag_exists "GITHUB_RELEASE_TAG"
+    _bx_check_release_tag_exists "$GITHUB_RELEASE_TAG"
   fi
 
   # Step 3: Process TAR archive
