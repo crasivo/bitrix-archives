@@ -79,3 +79,7 @@ jobs:
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}/manifest.json">Посмотреть manifest</a>
 
             #github #release #bitrix #distro #${{ matrix.distro }}
+        env:
+          BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
+          BITRIX_SM_VERSION: ${{ env.BITRIX_SM_VERSION }}
+          BITRIX_SM_VERSION_DATE: ${{ env.BITRIX_SM_VERSION_DATE }}
