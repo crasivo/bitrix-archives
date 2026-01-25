@@ -37,9 +37,14 @@ jobs:
 
       - name: Download distros & create manifest
         id: analysis
-        run: |
-          chmod +x ./bin/download-distro.sh
-          ./bin/download-distro.sh ${{ matrix.distro }}
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            chmod +x ./bin/download-distro.sh
+            ./bin/download-distro.sh ${{ matrix.distro }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -55,9 +60,9 @@ jobs:
             Данный релиз содержит оригинальные архивы для редакции `${{ matrix.distro }}` 1C-Bitrix,
             которые были загружены с официального сайта 1С-Битрикс.
 
-            **Kernel (main):**
-            - Version: `${{ env.BITRIX_SM_VERSION }}`
-            - Release date: `${{ env.BITRIX_SM_VERSION_DATE }}`
+            **Ядро (main):**
+            - Версия: `${{ env.BITRIX_SM_VERSION }}`
+            - Дата выпуска: `${{ env.BITRIX_SM_VERSION_DATE }}`
 
             Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
           files: |
@@ -70,18 +75,31 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
           parse-mode: html
+          message-file: ${{ env.BITRIX_MANIFEST_PATH }}
           message: |
             🚀 <b>Опубликован новый дистрибутив!</b>
 
             📦 Редакция: <code>${{ matrix.distro }}</code>
             🏷️ Версия ядра (main): <code>${{ env.BITRIX_SM_VERSION }}</code>
-            📅 Дата выпуска ядра (main): <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
-
+            📅 Дата выпуска ядра: <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
+            ---
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/download/${{ env.BITRIX_RELEASE_TAG }}/manifest.json">Посмотреть manifest</a>
 
             #github #release #bitrix #distro #${{ matrix.distro }}
         env:
           BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
           BITRIX_SM_VERSION: ${{ env.BITRIX_SM_VERSION }}
           BITRIX_SM_VERSION_DATE: ${{ env.BITRIX_SM_VERSION_DATE }}
+
+      - name: Send Telegram Alert
+        if: failure()
+        uses: jiacai2050/telegram-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse-mode: html
+          message: |
+            🚨 <b>Ошибка публикации релиза</b>
+
+            📦 Редакция: <code>${{ matrix.distro }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/${{ github.action_path }}">Посмотреть релиз</a>

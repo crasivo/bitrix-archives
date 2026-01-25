@@ -69,7 +69,24 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           chat-id: "@bitrix_archives"
           parse-mode: html
+          message-file: ${{ env.BITRIX_MANIFEST_PATH }}
           message: |
-            🚀 <b>Release: Новый скрипт!</b>
+            🚀 <b>Опубликован новый скрипт!</b>
+
             📦 Наименование файла: <code>${{ env.BITRIX_SCRIPT_NAME }}</code>
+            ---
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">Посмотреть релиз</a>
+
+            #github #release #bitrix #script
+
+      - name: Send Telegram Alert
+        if: failure()
+        uses: jiacai2050/telegram-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse-mode: html
+          message: |
+            🚨 <b>Ошибка публикации релиза</b>
+            📦 Редакция: <code>${{ matrix.script_name }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/${{ github.action_path }}">Посмотреть релиз</a>
