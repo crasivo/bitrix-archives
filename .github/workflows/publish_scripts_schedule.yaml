@@ -64,11 +64,6 @@ jobs:
       - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
         with:
-          token: "8324010789:AAHbN5ELcvvXY9rSH8erNrKX9eDI6_4vetw"
-          to: "@bitrix_archives"
-          debug: true
-          format: html
-          message: |
-            🚀 <b>New Bitrix Script</b>
-            📦 Filename: <code>${{ matrix.script_name }}</code>
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: "Test message without variables"
