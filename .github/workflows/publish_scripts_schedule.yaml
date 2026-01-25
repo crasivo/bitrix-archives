@@ -66,4 +66,8 @@ jobs:
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          message: "Test message without variables"
+          format: html
+          message: |
+            🚀 <b>New Bitrix Script</b>
+            📦 Filename: <code>${{ matrix.script_name }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
