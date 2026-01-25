@@ -96,6 +96,6 @@ jobs:
 
             📦 Файл: <code>${{ matrix.script_name }}</code>
 
-            🔗 <a href="https://github.com/${{ github.repository }}/${{ github.action_path }}">Посмотреть релиз</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/actions">Посмотреть журнал</a>
 
             #github #alert #bitrix #script
