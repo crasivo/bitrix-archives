@@ -16,6 +16,7 @@ S_ROOT_DIR=$(realpath "$S_CONTEXT_DIR/../")
 
 # Github
 GITHUB_ENV=${GITHUB_ENV:-}
+GITHUB_TOKEN=${GITHUB_TOKEN:-}
 
 # Bitrix
 BITRIX_DISTRO_CODE=${BITRIX_DISTRO_CODE:-}
@@ -36,14 +37,24 @@ BITRIX_ZIP_PATH=${BITRIX_ZIP_PATH:-}
 # @param $1 string Tag
 function _git_check_release_tag_exists() {
   echo "🔎 Check release '$1'"
-  # shellcheck disable=SC2155
-  local http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    # shellcheck disable=SC2155
+    local http_status=$(curl -s -o /dev/null -I -w "%{http_code}" \
+      -H "Authorization: Bearer $GITHUB_TOKEN" \
+      -H "Accept: application/vnd.github+json" \
+      "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
+  else
+    # shellcheck disable=SC2155
+    local http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+      "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
+  fi
   if [[ "$http_status" == '404' ]]; then
     echo "➡️ Release '$1' not found. Continue..."
     return
   fi
 
   # Notify Github
+  echo "➡️ Release '$1' already exists. Skipping..."
   if [[ -n "$GITHUB_ENV" ]]; then
     echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
   fi
