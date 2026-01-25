@@ -51,11 +51,11 @@ BITRIX_MANIFEST_FILEPATH=${BITRIX_META_MANIFEST_FILEPATH:-}
 # @description Check release exists
 # @param $1 string Tag
 function _bx_check_release_tag_exists() {
-  echo "[INFO] Check release '$1'"
+  echo "🔎 Check release '$1'"
   local http_status
   http_status=$(curl -s -o /dev/null -w "%{http_code}" "https://api.github.com/repos/$GITHUB_REPO/releases/tags/$1")
   if [[ $http_status == 404 ]]; then
-    echo "[INFO] Release '$1' not found. Continue..."
+    echo "➡️ Release '$1' not found. Continue..."
     return
   fi
 
@@ -126,7 +126,7 @@ function _bx_extract_sm_version() {
   # shellcheck disable=SC2155
   local php_content=$(unzip -p "$1" "bitrix/modules/main/classes/general/version.php")
   if [[ -z "$php_content" ]]; then
-    echo "[WARN] Failed to extract 'SM_VERSION' from '$1'"
+    echo "[⚠️ Failed to extract 'SM_VERSION' from '$1'"
     return
   fi
 
@@ -134,10 +134,10 @@ function _bx_extract_sm_version() {
   local sm_version=$(echo "$php_content" | grep -w "SM_VERSION" | awk -F "['\"]" '{print $4}')
   if [[ $sm_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     BITRIX_MAIN_VERSION="$sm_version"
-    echo "[INFO] Main version: $BITRIX_MAIN_VERSION"
+    echo "🏷️ Main version: $BITRIX_MAIN_VERSION"
   else
     BITRIX_MAIN_VERSION=null
-    echo "[ERROR] Failed to parse 'SM_VERSION'."
+    echo "⚠️ Failed to parse 'SM_VERSION'."
     return
   fi
 
@@ -145,10 +145,10 @@ function _bx_extract_sm_version() {
   local sm_date=$(echo "$php_content" | grep -w "SM_VERSION_DATE" | awk -F "['\"]" '{print $4}')
   if date -d "$sm_date" >/dev/null 2>&1; then
     BITRIX_MAIN_VERSION_DATE=$(date -d "$sm_date" --iso-8601=seconds)
-    echo "[INFO] Main version date: $BITRIX_MAIN_VERSION_DATE"
+    echo "📅 Main version date: $BITRIX_MAIN_VERSION_DATE"
   else
     BITRIX_MAIN_VERSION_DATE=null
-    echo "[WARN] Failed to parse 'SM_VERSION_DATE'."
+    echo "⚠️ Failed to parse 'SM_VERSION_DATE'."
   fi
 }
 
@@ -157,7 +157,7 @@ function _bx_extract_sm_version() {
 # @param $2 string File extension
 function _bx_download_distro() {
   if [[ -f $1 ]]; then
-    echo "[DEBUG] Local file $1 already exists"
+    echo "🐞 Local file $1 already exists"
     return
   fi
 
@@ -170,9 +170,8 @@ function _bx_download_distro() {
   fi
 
   # Execute
-  echo "[INFO] Download remote file: $download_url"
-  curl -SL -# "$download_url" -o "$1"
-  echo "[INFO] File was successfully downloaded: $1"
+  echo "⬇️ Downloading archive ($download_url)..."
+  curl -SL "$download_url" -o "$1"
 }
 
 # @description Dump file meta (tar)
@@ -231,7 +230,7 @@ function _cmd_process() {
   _bx_dump_zip_meta "$BITRIX_META_ZIP_FILEPATH"
   _bx_extract_sm_version "$BITRIX_META_ZIP_FILEPATH"
   if [[ -z "$BITRIX_MAIN_VERSION" ]] || [[ $BITRIX_MAIN_VERSION == null ]]; then
-    echo "[ERROR] Failed to extract main version"
+    echo "❌ Failed to extract main version"
     exit 1
   fi
 
@@ -273,7 +272,7 @@ case "$1" in
     shift
     ;;
   *)
-    echo "[ERROR] Undefined action ($1)"
+    echo "❌ Undefined action ($1)"
     exit 1
     ;;
 esac
