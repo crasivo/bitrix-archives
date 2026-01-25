@@ -39,7 +39,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download distros & create manifest
+      - name: Download distro & create manifest
         id: analysis
         uses: nick-fields/retry@v3
         with:

@@ -37,8 +37,14 @@ jobs:
 
       - name: Download script & create manifest
         id: analysis
-        run: |
-          ./bin/download-script.sh ${{ matrix.script_name }}
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_on: error
+          command: |
+            chmod +x ./bin/download-script.sh
+            ./bin/download-script.sh ${{ matrix.script_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
