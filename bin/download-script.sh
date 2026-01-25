@@ -175,7 +175,7 @@ function _cmd_run() {
   _bx_extract_script_meta "$BITRIX_SCRIPT_PATH" "$BITRIX_MANIFEST_PATH"
 
   # Export variables (github)
-  _bx_export_github_variables
+  _git_export_bitrix_variables
 }
 
 # ----------------------------------------------------------------
