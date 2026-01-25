@@ -61,6 +61,7 @@ jobs:
             ${{ env.BITRIX_META_SCRIPT_PATH }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Send Telegram Notification
         if: success()
         uses: jiacai2050/telegram-action@v1
@@ -69,6 +70,6 @@ jobs:
           chat-id: "@bitrix_archives"
           parse-mode: html
           message: |
-            🚀 <b>New Bitrix Script</b>
-            📦 Filename: <code>${{ env.BITRIX_SCRIPT_NAME }}</code>
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
+            🚀 <b>Release: Новый скрипт!</b>
+            📦 Наименование файла: <code>${{ env.BITRIX_SCRIPT_NAME }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">Посмотреть релиз</a>
