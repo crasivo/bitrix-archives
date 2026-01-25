@@ -40,18 +40,18 @@ jobs:
             - Release date: `${{ env.BITRIX_MAIN_VERSION_DATE }}`
 
             **Tar meta:**
-            - Filename: `${{ github.event.inputs.distro_code }}.tar.gz`
+            - File name: `${{ github.event.inputs.distro_code }}_encode.tar.gz`
+            - File size: ${{ env.BITRIX_META_TAR_SIZE_MB }} Mb
             - MD5: `${{ env.BITRIX_META_TAR_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_TAR_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_TAR_SHA256 }}`
-            - Size: ${{ env.BITRIX_META_TAR_SIZE_MB }} Mb
 
             **Zip meta:**
-            - Filename: `${{ github.event.inputs.distro_code }}.zip`
+            - File name: `${{ github.event.inputs.distro_code }}_encode.tar.gz`
+            - File size: ${{ env.BITRIX_META_ZIP_SIZE_MB }} Mb
             - MD5: `${{ env.BITRIX_META_ZIP_MD5 }}`
             - SHA1: `${{ env.BITRIX_META_ZIP_SHA1 }}`
             - SHA256: `${{ env.BITRIX_META_ZIP_SHA256 }}`
-            - Size: ${{ env.BITRIX_META_ZIP_SIZE_MB }} Mb
 
             В списке вложений также есть файл <a href="https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/manifest.json">manifest.json</a>,
             в котором содержиться вся необходимая информация о текущем релизе, включая основные мета-данные для каждого архива.
