@@ -79,6 +79,7 @@ function _git_export_bitrix_variables() {
 # @description Create initial manifest.json
 # @param $1 string Output filepath
 function _bx_create_initial_manifest() {
+  echo "🧾 Create manifest.json"
   jq -n \
     --arg distro_code "$BITRIX_DISTRO_CODE" \
     --arg distro_type "$BITRIX_DISTRO_TYPE" \

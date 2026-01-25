@@ -39,29 +39,16 @@ BITRIX_META_SCRIPT_SHA256=${BITRIX_META_SCRIPT_SHA256:-}
 # Functions
 # ----------------------------------------------------------------
 
-# @description Create manifest.json
-function _bx_create_final_manifest() {
+# @description Create initial manifest.json
+# @param $1 string Output filepath
+function _bx_create_initial_manifest() {
   echo "🧾 Create manifest.json"
   jq -n \
-    --arg script_path  "$BITRIX_META_SCRIPT_PATH" \
-    --arg script_size  "$BITRIX_META_SCRIPT_SIZE" \
-    --arg script_md5  "$BITRIX_META_SCRIPT_MD5" \
-    --arg script_sha1  "$BITRIX_META_SCRIPT_SHA1" \
-    --arg script_sha256  "$BITRIX_META_SCRIPT_SHA256" \
-    --arg release_date  "$GITHUB_RELEASE_DATE" \
-    --arg release_tag  "$GITHUB_RELEASE_TAG" \
+    --arg release_tag "$BITRIX_RELEASE_TAG" \
     '{
-      release_date: $release_date,
       release_tag: $release_tag,
-      assets: [
-        {
-          filename: ($script_path | split("/") | last),
-          md5: $script_md5,
-          sha1: $script_sha1,
-          sha256: $script_sha256,
-          size: ($script_size | tonumber)
-        }
-      ]
+      repository: "https://github.com/crasivo/bitrix-archives",
+      assets: []
     }' > "$1"
 }
 
@@ -122,7 +109,7 @@ function _cmd_run() {
 
   # Step 2. Create manifest.json
   BITRIX_MANIFEST_PATH="$output_dir/manifest.json"
-  _bx_create_final_manifest "$BITRIX_MANIFEST_PATH"
+  _bx_create_initial_manifest "$BITRIX_MANIFEST_PATH"
 }
 
 # ----------------------------------------------------------------
