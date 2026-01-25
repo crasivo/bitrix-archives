@@ -235,6 +235,7 @@ function _cmd_process() {
   fi
 
   # Step 2: Check release
+  GITHUB_RELEASE_TAG="${BITRIX_DISTRO_CODE}-${BITRIX_META_ZIP_FILEPATH}"
   if [[ -z "$GITHUB_RELEASE_TAG" ]]; then
     _bx_check_release_tag_exists "$GITHUB_RELEASE_TAG"
   fi
