@@ -63,9 +63,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Send Telegram Notification
         if: success()
-        uses: appleboy/telegram-action@master
+        uses: yanzay/send-telegram-chat-id
         with:
-          to: "@bitrix_archives"
+          chat_id: "@bitrix_archives"
           token: ${{ secrets.TELEGRAM_TOKEN }}
           format: html
           disable_notification: true
