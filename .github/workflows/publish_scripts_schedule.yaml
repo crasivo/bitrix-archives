@@ -69,7 +69,7 @@ jobs:
           disable_notification: true
           format: html
           message: |
-            🚀 <b>Новый релиз скрипта! ${{ env.TELEGRAM_CHAT_ID }}</b>
+            🚀 <b>Новый релиз скрипта! ${{ env.CHAT_ID }}</b>
 
             <b>Наименование:</b> <code>${{ matrix.script_name }}</code>
 
