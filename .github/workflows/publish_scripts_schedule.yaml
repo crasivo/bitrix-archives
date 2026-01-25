@@ -64,8 +64,10 @@ jobs:
       - name: Send Telegram Notification
         uses: appleboy/telegram-action@master
         with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
           format: html
           message: |
-            Hello!
+            🚀 <b>New Bitrix Script</b>
+            📦 Filename: <code>${{ matrix.script_name }}</code>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
