@@ -35,13 +35,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Define default variables
-        run: |
-          echo "BITRIX_RELEASE_TAG=${{ matrix.distro }}-$(date +'%Y%m%d')" >> $GITHUB_ENV;
-          echo "BITRIX_SM_VERSION=null" >> $GITHUB_ENV;
-          echo "BITRIX_SM_VERSION_DATE=null" >> $GITHUB_ENV;
-          echo "SKIP_PUBLISH=false" >> $GITHUB_ENV;
-
       - name: Download distros & create manifest
         id: analysis
         run: |
@@ -66,11 +59,7 @@ jobs:
 
             Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
           files: |
-            ${{ env.BITRIX_MANIFEST_PATH }}
-            ${{ env.BITRIX_ZIP_PATH }}
-            ${{ env.BITRIX_ZIP_PATH }}.*
-            ${{ env.BITRIX_TAR_PATH }}
-            ${{ env.BITRIX_TAR_PATH }}.*
+            ${{ env.BITRIX_OUTPUT_DIR }}/*
 
       - name: Send Telegram Notification
         if: success()
