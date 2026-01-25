@@ -262,9 +262,9 @@ function _cmd_run() {
 
   # Step 3. Check kernel version
   if [[ -z "$BITRIX_SM_VERSION" || "$BITRIX_SM_VERSION" == 'null' ]]; then
-    echo "⚠️ Failed to define kernel (main) version."
+    echo "❌ Failed to define kernel (main) version."
     echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
-    exit 0
+    exit 1
   fi
 
   # Step 4. Check release duplicates

@@ -76,7 +76,7 @@ jobs:
             📅 Дата выпуска ядра (main): <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
 
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
-            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}/manifest.json">Посмотреть manifest</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/download/${{ env.BITRIX_RELEASE_TAG }}/manifest.json">Посмотреть manifest</a>
 
             #github #release #bitrix #distro #${{ matrix.distro }}
         env:
