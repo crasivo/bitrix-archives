@@ -153,7 +153,7 @@ function _bx_extract_script_meta() {
 # @description Run process
 function _cmd_run() {
   if [[ -z "$BITRIX_OUTPUT_DIR" ]]; then
-    BITRIX_OUTPUT_DIR="$S_ROOT_DIR/dist/$BITRIX_DISTRO_TYPE/$BITRIX_DISTRO_CODE"
+    BITRIX_OUTPUT_DIR="$S_ROOT_DIR/dist/$BITRIX_SCRIPT_NAME"
   fi
 
   # Step 0. Prepare
