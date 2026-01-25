@@ -69,10 +69,12 @@ jobs:
           disable_notification: true
           format: html
           message: |
-            🚀 <b>Новый релиз скрипта! ${{ secrets.TELEGRAM_CHAT_ID }}</b>
+            🚀 <b>Новый релиз скрипта! ${{ env.TELEGRAM_CHAT_ID }}</b>
 
             <b>Наименование:</b> <code>${{ matrix.script_name }}</code>
 
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.RELEASE_TAG }}">View Release</a>
 
             #github #bitrix #script
+        env:
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
