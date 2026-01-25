@@ -65,14 +65,28 @@ jobs:
             - Release date: `${{ env.BITRIX_SM_VERSION_DATE }}`
 
             Дополнительную информацию по текущему релизу можно посмотреть в файле `manifest.json`.
-
-            ---
-            Описание сгенерировано автоматическии через GitHub Action.
           files: |
             ${{ env.BITRIX_MANIFEST_PATH }}
             ${{ env.BITRIX_ZIP_PATH }}
             ${{ env.BITRIX_ZIP_PATH }}.*
             ${{ env.BITRIX_TAR_PATH }}
             ${{ env.BITRIX_TAR_PATH }}.*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Telegram Notification
+        if: success()
+        uses: jiacai2050/telegram-action@v1
+        with:
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse-mode: html
+          message: |
+            🚀 <b>GitHub Action: Опубликован новый дистрибутив!</b>
+
+            📦 Редакция: <code>${{ matrix.distro }}</code>
+            🏷️ Версия ядра (main): <code>${{ env.BITRIX_SM_VERSION }}</code>
+            📅 Дата выпуска ядра (main): <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
+
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
+            🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}/manifest.json">Посмотреть manifest</a>
+
+            #github #release #bitrix #distro #${{ matrix.distro }}
