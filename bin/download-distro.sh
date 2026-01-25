@@ -111,8 +111,8 @@ function _bx_download_distro() {
   local basename=$(basename "$1")
   if [[ -f "$1" ]]; then
     # shellcheck disable=SC2086
-    echo "🐞 Local file '$basename' already exists. Skipping..."
-    return
+    echo "🐞 Local file '$basename' already exists. Removing..."
+    rm -f "$1"
   fi
 
   # Define remote URL
