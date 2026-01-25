@@ -1,0 +1,17 @@
+# IDE
+.idea/
+.vscode/
+
+# Env
+/.env
+/.env.local
+/.env.prod
+
+# Hidden
+/dist*
+/test*
+/tmp*
+
+# Misc
+.DS_Store
+Thumbs.db

@@ -1,0 +1,2 @@
+*.json linguist-generated=true
+bin/*.sh linguist-vendored=true
