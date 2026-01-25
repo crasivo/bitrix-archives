@@ -264,13 +264,16 @@ function _cmd_run() {
     BITRIX_OUTPUT_DIR="$S_ROOT_DIR/dist/$BITRIX_DISTRO_TYPE/$BITRIX_DISTRO_CODE"
   fi
 
+  # Step 0. Prepare
   mkdir -p "$BITRIX_OUTPUT_DIR"
+  BITRIX_MANIFEST_PATH="$BITRIX_OUTPUT_DIR/manifest.json"
+
   # Step 1. Download zip archive
   BITRIX_ZIP_PATH="$BITRIX_OUTPUT_DIR/${BITRIX_DISTRO_CODE}_encode.zip"
   _bx_download_distro "$BITRIX_ZIP_PATH"
 
   # Step 2. Extract kernel meta
-  _bx_extract_zip_sm_version "$BITRIX_ZIP_PATH" "$BITRIX_OUTPUT_DIR/manifest.json"
+  _bx_extract_zip_sm_version "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
 
   # Step 3. Check kernel version
   if [[ -z "$BITRIX_SM_VERSION" || "$BITRIX_SM_VERSION" == 'null' ]]; then
@@ -284,16 +287,16 @@ function _cmd_run() {
   _git_check_release_tag_exists "$BITRIX_RELEASE_TAG"
 
   # Step 5. Create manifest & dump zip meta
-  _bx_create_initial_manifest "$BITRIX_OUTPUT_DIR/manifest.json"
-  _bx_extract_distro_meta "$BITRIX_ZIP_PATH" "$BITRIX_OUTPUT_DIR/manifest.json"
-  _bx_extract_zip_module_versions "$BITRIX_ZIP_PATH" "$BITRIX_OUTPUT_DIR/manifest.json"
+  _bx_create_initial_manifest "$BITRIX_MANIFEST_PATH"
+  _bx_extract_distro_meta "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
+  _bx_extract_zip_module_versions "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
 
   # Step 6. Download tar archive
   BITRIX_TAR_PATH="$BITRIX_OUTPUT_DIR/${BITRIX_DISTRO_CODE}_encode.tar.gz"
   _bx_download_distro "$BITRIX_TAR_PATH"
 
   # Step 7. Export tar meta
-  _bx_extract_distro_meta "$BITRIX_TAR_PATH" "$BITRIX_OUTPUT_DIR/manifest.json"
+  _bx_extract_distro_meta "$BITRIX_TAR_PATH" "$BITRIX_MANIFEST_PATH"
 
   # Step 8. Export github variables
   _git_export_bitrix_variables

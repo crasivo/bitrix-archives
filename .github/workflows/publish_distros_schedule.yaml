@@ -9,6 +9,11 @@ on:
         description: 'Reason for manual trigger'
         required: false
         default: 'Manual maintenance'
+      notify_telegram:
+        description: 'Telegram notifications'
+        required: true
+        default: false
+        options: [false,true]
 
 jobs:
   publish_distro:
@@ -82,11 +87,12 @@ jobs:
             📦 Редакция: <code>${{ matrix.distro }}</code>
             🏷️ Версия ядра (main): <code>${{ env.BITRIX_SM_VERSION }}</code>
             📅 Дата выпуска ядра: <code>${{ env.BITRIX_SM_VERSION_DATE }}</code>
-            ---
+
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">Посмотреть релиз</a>
 
             #github #release #bitrix #distro #${{ matrix.distro }}
         env:
+          BITRIX_MANIFEST_PATH: ${{ env.BITRIX_MANIFEST_PATH }}
           BITRIX_RELEASE_TAG: ${{ env.BITRIX_RELEASE_TAG }}
           BITRIX_SM_VERSION: ${{ env.BITRIX_SM_VERSION }}
           BITRIX_SM_VERSION_DATE: ${{ env.BITRIX_SM_VERSION_DATE }}
@@ -102,4 +108,5 @@ jobs:
             🚨 <b>Ошибка публикации релиза</b>
 
             📦 Редакция: <code>${{ matrix.distro }}</code>
-            🔗 <a href="https://github.com/${{ github.repository }}/${{ github.action_path }}">Посмотреть релиз</a>
+
+            🔗 <a href="https://github.com/${{ github.repository }}/actions">Посмотреть журнал</a>
