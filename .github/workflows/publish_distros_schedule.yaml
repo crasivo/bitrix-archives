@@ -66,7 +66,7 @@ jobs:
         if: env.SKIP_PUBLISH != 'true' && env.BITRIX_SM_VERSION != ''
         with:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
-          name: "${{ matrix.distro }} v${{ env.BITRIX_SM_VERSION }} (${{ github.event.updated_at }})"
+          name: "${{ matrix.distro }} v${{ env.BITRIX_SM_VERSION }}"
           # Двуязычное описание
           body: |
             ## 📦 Release Info / Информация о релизе
