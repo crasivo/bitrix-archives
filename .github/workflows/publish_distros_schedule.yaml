@@ -1,4 +1,4 @@
-name: Scheduled Distros Publish (all)
+name: Scheduled Publish
 
 on:
   schedule:
