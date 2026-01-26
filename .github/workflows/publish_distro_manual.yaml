@@ -1,4 +1,4 @@
-name: Manual Distro Publish
+name: Manual Publish
 
 on:
   workflow_dispatch:
@@ -17,10 +17,14 @@ on:
           - business
           - business_cluster
           - business_cluster_postgresql
+      is_prerelease:
+        description: 'Mark as a pre-release (hidden from latest)'
+        type: boolean
+        default: true
       notify_telegram:
         description: 'Send Telegram notifications'
         type: boolean
-        default: true
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.inputs.distro }}
@@ -60,6 +64,7 @@ jobs:
         with:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
           name: "${{ github.event.inputs.distro }} v${{ env.BITRIX_SM_VERSION }}"
+          prerelease: ${{ github.event.inputs.is_prerelease }}
           body: |
             ## 📦 Release Info / Информация о релизе
 
@@ -90,7 +95,8 @@ jobs:
         if: |
           success() &&
           env.SKIP_PUBLISH != 'true' &&
-          github.event.inputs.notify_telegram == 'true'
+          github.event.inputs.notify_telegram == 'true' &&
+          github.event.inputs.is_prerelease == false
         uses: jiacai2050/telegram-action@v1
         with:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -106,21 +112,3 @@ jobs:
             🔗 <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.BITRIX_RELEASE_TAG }}">View on GitHub</a>
 
             #github #bitrix #release #distro #${{ github.event.inputs.distro }}
-
-      - name: Send Telegram Alert on Failure
-        if: |
-          failure() &&
-          github.event.inputs.notify_telegram == 'true'
-        uses: jiacai2050/telegram-action@v1
-        with:
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          parse-mode: html
-          message: |
-            🚨 <b>Failed to publish distro!</b>
-
-            📦 Distro: <code>${{ github.event.inputs.distro }}</code>
-
-            🔗 <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Check Logs</a>
-
-            #github #bitrix #alert #distro #${{ github.event.inputs.distro }}
