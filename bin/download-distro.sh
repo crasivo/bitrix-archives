@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# shellcheck disable=SC2155
+
 set -o pipefail
 set -o errtrace
 set -o nounset
@@ -33,29 +35,27 @@ BITRIX_ZIP_PATH=${BITRIX_ZIP_PATH:-}
 # Functions
 # ----------------------------------------------------------------
 
-# @description Check release exists
-# @param $1 string Tag
+# @description Check if the GitHub release tag already exists
+# @param $1 string Tag name
 function _git_check_release_tag_exists() {
-  echo "🔎 Check release '$1'"
+  echo "🔎 Checking release status for tag: '$1'..."
+  local http_status
   if [[ -n "$GITHUB_TOKEN" ]]; then
-    # shellcheck disable=SC2155
-    local http_status=$(curl -s -o /dev/null -I -w "%{http_code}" \
+    http_status=$(curl -s -o /dev/null -I -w "%{http_code}" \
       -H "Authorization: Bearer $GITHUB_TOKEN" \
       -H "Accept: application/vnd.github+json" \
       "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
   else
-    # shellcheck disable=SC2155
-    local http_status=$(curl -s -o /dev/null -w "%{http_code}" \
+    http_status=$(curl -s -o /dev/null -w "%{http_code}" \
       -H "Accept: application/vnd.github+json" \
       "https://api.github.com/repos/crasivo/bitrix-archives/releases/tags/$1")
   fi
+  # Check status
   if [[ "$http_status" == '404' ]]; then
-    echo "➡️ Release '$1' not found. Continue..."
+    echo "➡️ Release '$1' not found. Continuing execution..."
     return
   fi
-
-  # Notify Github
-  echo "➡️ Release '$1' already exists. Skipping..."
+  echo "➡️ Release '$1' already exists. Skipping publish..."
   if [[ -n "$GITHUB_ENV" ]]; then
     echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
   fi
@@ -64,22 +64,22 @@ function _git_check_release_tag_exists() {
   exit 0
 }
 
-# @description Export BITRIX_* variables for Github Action
+# @description Export all BITRIX_* variables to GitHub Actions environment
 function _git_export_bitrix_variables() {
   if [[ -z "$GITHUB_ENV" ]]; then
-    echo "🐞 Skipping export variables (GitHub Action)"
+    echo "🐞 Skipping export: GITHUB_ENV is not defined."
     return
   fi
-  echo "⬆️ Export variables (GitHub Action)"
+  echo "⬆️ Exporting BITRIX environment variables..."
   for var in $(compgen -v | grep '^BITRIX_'); do
     echo "$var=${!var}" >> "$GITHUB_ENV"
   done
 }
 
-# @description Create initial manifest.json
-# @param $1 string Output filepath
+# @description Initialize the manifest.json file with product details
+# @param $1 string Target manifest filepath
 function _bx_create_initial_manifest() {
-  echo "🧾 Create manifest.json"
+  echo "🧾 Creating manifest.json..."
   jq -n \
     --arg distro_code "$BITRIX_DISTRO_CODE" \
     --arg distro_type "$BITRIX_DISTRO_TYPE" \
@@ -104,61 +104,63 @@ function _bx_create_initial_manifest() {
     }' > "$1"
 }
 
-# @description Download archive
+# @description Download distro archive with resume support and integrity verification
 # @param $1 string Output filepath
 function _bx_download_distro() {
-  # shellcheck disable=SC2155
   local basename=$(basename "$1")
-  if [[ -f "$1" ]]; then
-    # shellcheck disable=SC2086
-    echo "🐞 Local file '$basename' already exists. Removing..."
-    rm -f "$1"
-  fi
-
-  # Define remote URL
   local extension=${basename#*.}
   local download_url
+
   if [[ $BITRIX_DISTRO_TYPE == portal ]]; then
     download_url="https://www.1c-bitrix.ru/download/portal/${BITRIX_DISTRO_CODE}_encode.$extension"
   else
     download_url="https://www.1c-bitrix.ru/download/${BITRIX_DISTRO_CODE}_encode.$extension"
   fi
 
-  # Execute
-  echo "⬇️ Downloading archive ($download_url)..."
-  curl -SL "$download_url" -o "$1"
+  echo "⬇️ Downloading archive: $download_url"
+
+  # Added -C - for resume support and retry logic
+  if ! curl -SL -C - \
+    --connect-timeout 30 \
+    --retry 10 \
+    --retry-delay 5 \
+    --retry-all-errors \
+    "$download_url" -o "$1"; then
+      echo "❌ Error: Failed to download $basename"
+      return 1
+  fi
+
+  # Basic integrity check after download/resume
+  echo "🛡️ Verifying $basename integrity..."
+  if [[ "$extension" == "zip" ]]; then
+    unzip -tq "$1" > /dev/null 2>&1 || { echo "❌ ZIP corrupted"; rm -f "$1"; return 1; }
+  elif [[ "$extension" == "gz" ]]; then
+    gzip -t "$1" > /dev/null 2>&1 || { echo "❌ TAR.GZ corrupted"; rm -f "$1"; return 1; }
+  fi
 }
 
-# @description Extract file meta (tar)
-# @param $1 string Input distro archive
-# @param $2 string Output manifest.json
+# @description Extract file metadata (hashes, size) and update the manifest
+# @param $1 string Archive filepath
+# @param $2 string Manifest filepath
 function _bx_extract_distro_meta() {
-  # shellcheck disable=SC2155
   local basename=$(basename "$1")
-  # shellcheck disable=SC2155
   local dirname=$(dirname "$1")
-  echo "ℹ️ Extracting meta for $basename"
+  echo "ℹ️ Extracting metadata for $basename"
+
   local size=$(stat -c%s "$1")
   local md5=$(md5sum "$1" | awk '{ print $1 }')
   local sha1=$(sha1sum "$1" | awk '{ print $1 }')
   local sha256=$(sha256sum "$1" | awk '{ print $1 }')
 
-  # Dump file checksums
-  if [[ -n "$md5" ]]; then
-      echo "$md5" > "$1.md5"
-      echo "$md5 $basename" >> "$dirname/checksums_md5.txt"
-  fi
-  if [[ -n "$sha1" ]]; then
-      echo "$sha1" > "$1.sha1"
-      echo "$sha1 $basename" >> "$dirname/checksums_sha1.txt"
-  fi
-  if [[ -n "$sha256" ]]; then
-      echo "$sha256" > "$1.sha256"
-      echo "$sha256 $basename" >> "$dirname/checksums_sha256.txt"
-  fi
+  # Generate standalone checksum files as per original logic
+  echo "$md5" > "$1.md5"
+  echo "$md5  $basename" >> "$dirname/checksums_md5.txt"
+  echo "$sha1" > "$1.sha1"
+  echo "$sha1  $basename" >> "$dirname/checksums_sha1.txt"
+  echo "$sha256" > "$1.sha256"
+  echo "$sha256  $basename" >> "$dirname/checksums_sha256.txt"
 
-  # Dump manifest assets
-  # shellcheck disable=SC2155
+  # Update manifest assets array
   local tmp_manifest=$(mktemp)
   jq --arg name "$basename" \
      --arg md5 "$md5" \
@@ -174,27 +176,24 @@ function _bx_extract_distro_meta() {
      }]' "$2" > "$tmp_manifest" && mv -f "$tmp_manifest" "$2"
 }
 
-# @description Extract all module versions
-# @param $1 string Input distro.zip
-# @param $2 string Output module_versions.json
+# @description Extract all module versions from the ZIP archive
+# @param $1 string ZIP archive path
+# @param $2 string Manifest JSON path
 function _bx_extract_zip_module_versions() {
-  # shellcheck disable=SC2155
   local basename=$(basename "$1")
-  echo "ℹ️ Extracting module versions from '$basename'"
+  echo "ℹ️ Extracting module versions from '$basename'..."
   if [[ ! -f "$1" ]]; then
-    echo "⚠️ Input file '$basename' not found. Skipping..."
+    echo "⚠️ Error: Input file '$1' not found."
     return
   fi
 
-  # shellcheck disable=SC2155
-  local file_list=$(unzip -l "$1" 'bitrix/modules/*/install/version.php' | awk '/bitrix\/modules/ {print $4}')
+  local file_list=$(unzip -l "$1" 'bitrix/modules/*/install/version.php' 2>/dev/null | awk '/bitrix\/modules/ {print $4}') || true
   local tmp_file=$(mktemp)
 
   for file in $file_list; do
-    module_id=$(echo "$file" | cut -d'/' -f3)
-    content=$(unzip -p "$1" "$file")
-    # Parse & validate 'VERSION'
-    version=$(echo "$content" | grep -Ei "['\"]VERSION['\"]\s*=>\s*['\"]" | sed -E "s/.*['\"]VERSION['\"]\s*=>\s*['\"]([^'\"]+)['\"].*/\1/")
+    local module_id=$(echo "$file" | cut -d'/' -f3)
+    local content=$(unzip -p "$1" "$file")
+    local version=$(echo "$content" | grep -Ei "['\"]VERSION['\"]\s*=>\s*['\"]" | sed -E "s/.*['\"]VERSION['\"]\s*=>\s*['\"]([^'\"]+)['\"].*/\1/")
     if [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
       echo "- Extract '$module_id' version: $version"
     else
@@ -202,8 +201,7 @@ function _bx_extract_zip_module_versions() {
       version=null
     fi
 
-    # Parse & validate 'VERSION_DATE'
-    version_date=$(echo "$content" | grep -Ei "['\"]VERSION_DATE['\"]\s*=>\s*['\"]" | sed -E "s/.*['\"]VERSION_DATE['\"]\s*=>\s*['\"]([^'\"]+)['\"].*/\1/")
+    local version_date=$(echo "$content" | grep -Ei "['\"]VERSION_DATE['\"]\s*=>\s*['\"]" | sed -E "s/.*['\"]VERSION_DATE['\"]\s*=>\s*['\"]([^'\"]+)['\"].*/\1/")
     if date -d "$version_date" >/dev/null 2>&1; then
       version_date=$(date -d "$version_date" --iso-8601=seconds)
       echo "- Extract '$module_id' version date: $version_date"
@@ -212,7 +210,7 @@ function _bx_extract_zip_module_versions() {
       echo "- Warning: Module '$module_id' doesn't contain valid 'version.php'."
     fi
 
-    # Append data
+    # Appending manifest.json data
     jq --arg id "$module_id" \
       --arg ver "$version" \
       --arg date "$version_date" \
@@ -221,44 +219,41 @@ function _bx_extract_zip_module_versions() {
   done
 }
 
-# @description Extract kernel version & date
-# @param $1 string Input distro.zip
+# @description Extract kernel version and date from the main module
+# @param $1 string ZIP archive path
 function _bx_extract_zip_sm_version() {
   if [[ ! -f "$1" ]]; then
-    echo "⚠️ Input file '$1' not found. Skipping."
+    echo "⚠️ Error: ZIP file not found for version extraction."
     return
   fi
 
-  # shellcheck disable=SC2155
-  local php_content=$(unzip -p "$1" 'bitrix/modules/main/classes/general/version.php')
+  local php_content=$(unzip -p "$1" 'bitrix/modules/main/classes/general/version.php' 2>/dev/null || echo "")
   if [[ -z "$php_content" ]]; then
-    echo "⚠️ Failed to extract 'version.php' from '$1'"
+    echo "⚠️ Could not extract version.php"
     return
   fi
 
-  # shellcheck disable=SC2155
   local sm_version=$(echo "$php_content" | grep -w 'SM_VERSION' | awk -F "['\"]" '{print $4}')
   if [[ $sm_version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     BITRIX_SM_VERSION="$sm_version"
-    echo "🏷️ Main version: $BITRIX_SM_VERSION"
+    echo "🏷️ SM_VERSION: $BITRIX_SM_VERSION"
   else
-    echo "⚠️ Failed to parse 'SM_VERSION'. Skipping..."
+    echo "⚠️ Failed to parse SM_VERSION"
     return
   fi
 
-  # shellcheck disable=SC2155
   local sm_version_date=$(echo "$php_content" | grep -w "SM_VERSION_DATE" | awk -F "['\"]" '{print $4}')
   if date -d "$sm_version_date" >/dev/null 2>&1; then
-    sm_version_date=$(date -d "$sm_version_date" --iso-8601=seconds)
-    BITRIX_SM_VERSION_DATE="$sm_version_date"
-    echo "📅 Main version date: $BITRIX_SM_VERSION_DATE"
+    BITRIX_SM_VERSION_DATE=$(date -d "$sm_version_date" --iso-8601=seconds)
+    echo "📅 SM_VERSION_DATE: $BITRIX_SM_VERSION_DATE"
   fi
 }
 
 # ----------------------------------------------------------------
-# Commands
+# Main logic
 # ----------------------------------------------------------------
 
+# @description Main workflow execution
 function _cmd_run() {
   if [[ -z "$BITRIX_OUTPUT_DIR" ]]; then
     BITRIX_OUTPUT_DIR="$S_ROOT_DIR/dist/$BITRIX_DISTRO_TYPE/$BITRIX_DISTRO_CODE"
@@ -268,47 +263,48 @@ function _cmd_run() {
   mkdir -p "$BITRIX_OUTPUT_DIR"
   BITRIX_MANIFEST_PATH="$BITRIX_OUTPUT_DIR/manifest.json"
 
-  # Step 1. Download zip archive
+  # Step 1. Download ZIP
   BITRIX_ZIP_PATH="$BITRIX_OUTPUT_DIR/${BITRIX_DISTRO_CODE}_encode.zip"
   _bx_download_distro "$BITRIX_ZIP_PATH"
 
-  # Step 2. Extract kernel meta
-  _bx_extract_zip_sm_version "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
+  # Step 2. Get kernel info
+  _bx_extract_zip_sm_version "$BITRIX_ZIP_PATH"
 
-  # Step 3. Check kernel version
+  # Step 3. Validation
   if [[ -z "$BITRIX_SM_VERSION" || "$BITRIX_SM_VERSION" == 'null' ]]; then
-    echo "❌ Failed to define kernel (main) version."
-    echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
+    echo "❌ Error: Kernel (main) version is undefined."
+    [[ -n "$GITHUB_ENV" ]] && echo "SKIP_PUBLISH=true" >> "$GITHUB_ENV"
     exit 1
   fi
 
-  # Step 4. Check release duplicates
+  # Step 4. Release check
   BITRIX_RELEASE_TAG="${BITRIX_DISTRO_CODE}-${BITRIX_SM_VERSION}"
   _git_check_release_tag_exists "$BITRIX_RELEASE_TAG"
 
-  # Step 5. Create manifest & dump zip meta
+  # Step 5. Manifest & Zip Meta
   _bx_create_initial_manifest "$BITRIX_MANIFEST_PATH"
   _bx_extract_distro_meta "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
   _bx_extract_zip_module_versions "$BITRIX_ZIP_PATH" "$BITRIX_MANIFEST_PATH"
 
-  # Step 6. Download tar archive
+  # Step 6. Download TAR
   BITRIX_TAR_PATH="$BITRIX_OUTPUT_DIR/${BITRIX_DISTRO_CODE}_encode.tar.gz"
   _bx_download_distro "$BITRIX_TAR_PATH"
 
-  # Step 7. Export tar meta
+  # Step 7. Tar Meta
   _bx_extract_distro_meta "$BITRIX_TAR_PATH" "$BITRIX_MANIFEST_PATH"
 
-  # Step 8. Export github variables
+  # Step 8. Export
   _git_export_bitrix_variables
+  echo "🚀 Process complete for $BITRIX_RELEASE_TAG"
 }
 
 # ----------------------------------------------------------------
-# Runtime
+# Execution entry point
 # ----------------------------------------------------------------
 
 # Check arguments
 if [[ "$#" -lt 1 ]]; then
-  echo "❌ Error: Illegal number of parameters"
+  echo "❌ Error: Distro code argument required"
   exit 1
 fi
 
@@ -325,7 +321,7 @@ case "$1" in
     shift
     ;;
   *)
-    echo "❌ Undefined distro - $1"
+    echo "❌ Error: Undefined distro - $1"
     exit 1
     ;;
 esac
@@ -335,11 +331,7 @@ for i in "$@"; do
   case "$i" in
     --env=*)
       # shellcheck disable=SC2046
-      export $(grep -E '^#' "${i#*=}" | xargs)
-      shift
-      ;;
-    --type=*)
-      BITRIX_DISTRO_TYPE="${i#*=}"
+      export $(grep -v '^#' "${i#*=}" | xargs)
       shift
       ;;
     --output=*)
@@ -349,5 +341,5 @@ for i in "$@"; do
   esac
 done
 
-# Process
+# RUN!
 _cmd_run
