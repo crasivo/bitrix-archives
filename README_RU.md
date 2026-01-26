@@ -1,6 +1,11 @@
 📥 Зеркало архивов 1С-Битрикс
 ===
 
+[![Distros Sync](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml/badge.svg)](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/crasivo/bitrix-archives?style=flat-square&color=orange)
+![GitHub Repo size](https://img.shields.io/github/repo-size/crasivo/bitrix-archives?style=flat-square)
+![License](https://img.shields.io/github/license/crasivo/bitrix-archives?style=flat-square)
+
 Данный репозиторий является независимым зеркалом, предназначенным для хранения истории версий дистрибутивов и служебных скриптов
 1С-Битрикс. Публикуемые ресурсы предполагается использовать для разработки, тестирования или отката продукта до конкретной версии
 ядра.

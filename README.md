@@ -1,6 +1,11 @@
 📥 1C-Bitrix Archives Mirror
 ===
 
+[![Distros Sync](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml/badge.svg)](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/crasivo/bitrix-archives?style=flat-square&color=orange)
+![GitHub Repo size](https://img.shields.io/github/repo-size/crasivo/bitrix-archives?style=flat-square)
+![License](https://img.shields.io/github/license/crasivo/bitrix-archives?style=flat-square)
+
 This repository is an independent mirror dedicated to preserving the version history of 1C-Bitrix distributions and service
 scripts. These resources are intended for development, testing, or rolling back a product to a specific kernel version.
 
