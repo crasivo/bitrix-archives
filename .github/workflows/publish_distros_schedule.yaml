@@ -67,6 +67,8 @@ jobs:
         with:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
           name: "${{ matrix.distro }} v${{ env.BITRIX_SM_VERSION }}"
+          make_latest: false
+          prerelease: false
           body: |
             ## 📦 Release Info / Информация о релизе
 

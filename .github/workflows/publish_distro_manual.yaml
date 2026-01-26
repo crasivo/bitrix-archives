@@ -65,6 +65,7 @@ jobs:
           tag_name: ${{ env.BITRIX_RELEASE_TAG }}
           name: "${{ github.event.inputs.distro }} v${{ env.BITRIX_SM_VERSION }}"
           prerelease: ${{ github.event.inputs.is_prerelease }}
+          make_latest: false
           body: |
             ## 📦 Release Info / Информация о релизе
 
