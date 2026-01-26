@@ -1,7 +1,8 @@
 📥 1C-Bitrix Archives Mirror
 ===
 
-[![Distros Sync](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml/badge.svg)](https://github.com/crasivo/bitrix-archives/actions/workflows/scheduled_publish.yml)
+[![Manual Publish](https://github.com/crasivo/bitrix-archives/actions/workflows/publish_distro_manual.yaml/badge.svg)](https://github.com/crasivo/bitrix-archives/actions/workflows/publish_distro_manual.yaml)
+[![Schedule Publish](https://github.com/crasivo/bitrix-archives/actions/workflows/publish_distros_schedule.yaml/badge.svg)](https://github.com/crasivo/bitrix-archives/actions/workflows/publish_distros_schedule.yaml)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/crasivo/bitrix-archives?style=flat-square&color=orange)
 ![GitHub Repo size](https://img.shields.io/github/repo-size/crasivo/bitrix-archives?style=flat-square)
 ![License](https://img.shields.io/github/license/crasivo/bitrix-archives?style=flat-square)
