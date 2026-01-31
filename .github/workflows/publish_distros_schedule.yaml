@@ -3,6 +3,8 @@ name: Scheduled Publish
 on:
   schedule:
     - cron: '0 3 * * *' # 03:00 UTC
+  repository_dispatch:
+    types: [external_run]
   workflow_dispatch:
     inputs:
       reason:
