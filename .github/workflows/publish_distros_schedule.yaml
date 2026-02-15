@@ -100,12 +100,12 @@ jobs:
           success() &&
           env.SKIP_PUBLISH != 'true' &&
           (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
-        uses: jiacai2050/telegram-action@v1
+        uses: crasivo/telegram-action@v1
         with:
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          parse-mode: html
-          message: |
+          bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse_mode: HTML
+          message_text: |
             🚀 <b>New Bitrix Release!</b>
 
             📦 <b>Distro:</b> <code>${{ matrix.distro }}</code>
@@ -120,12 +120,12 @@ jobs:
         if: |
           failure() &&
           (github.event.inputs.notify_telegram == 'true' || github.event_name == 'schedule' || github.event.inputs.notify_telegram == null)
-        uses: jiacai2050/telegram-action@v1
+        uses: crasivo/telegram-action@v1
         with:
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
-          parse-mode: html
-          message: |
+          bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          chat_id: ${{ secrets.TELEGRAM_CHAT_ID }}
+          parse_mode: HTML
+          message_text: |
             🚨 <b>Failed to publish distro!</b>
 
             📦 Distro: <code>${{ matrix.distro }}</code>
